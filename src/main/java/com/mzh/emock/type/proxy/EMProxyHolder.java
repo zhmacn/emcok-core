@@ -1,18 +1,17 @@
 package com.mzh.emock.type.proxy;
 
-import com.mzh.emock.util.EMObjectUtil;
 import com.mzh.emock.util.entity.EMFieldInfo;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class EMProxyHolder {
-    private int proxyHash;
-    private Object proxy;
+public class EMProxyHolder<T> {
+    private final int proxyHash;
+    private T proxy;
     private List<EMFieldInfo> injectField;
 
-    public EMProxyHolder(Object proxy) {
+    public EMProxyHolder(T proxy) {
         this.proxy = proxy;
         this.proxyHash=999000000+new Random().nextInt(1000000);
     }
@@ -21,11 +20,11 @@ public class EMProxyHolder {
         return proxyHash;
     }
 
-    public Object getProxy() {
+    public T getProxy() {
         return proxy;
     }
 
-    public void setProxy(Object proxy) {
+    public void setProxy(T proxy) {
         this.proxy = proxy;
     }
 

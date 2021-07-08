@@ -14,6 +14,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class EMObjectUtil {
+
+    private static final AtomicLong idSequence=new AtomicLong(0);
+
     private static final int initSize=2000;
     private static final Set<Object> hasRead=new HashSet<>(initSize);
     private static Object currentTarget=null;
@@ -30,6 +33,10 @@ public class EMObjectUtil {
     }
 
     private EMObjectUtil() { }
+
+    public static long getNextId(){
+        return idSequence.getAndIncrement();
+    }
 
     public static Map<Object,List<EMFieldInfo>> match(Object src, Object target) {
         if(target!=currentTarget){

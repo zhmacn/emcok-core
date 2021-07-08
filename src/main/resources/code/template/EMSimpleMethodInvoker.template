@@ -1,0 +1,20 @@
+package com.mzh.emock.manager.code;
+
+import com.mzh.emock.type.object.method.EMMethodInvoker;
+!!$$$IMPORT_HOLDER$$$
+
+public class !!$$$CLZ_NAME$$$ implements EMMethodInvoker<!!$$$RETURN_TYPE$$$,Object[]> {
+
+    public String base64Code;
+    public !!$$$CLZ_NAME$$$(String base64Code){
+        this.base64Code=base64Code;
+    }
+
+    !!$$$CODE_HOLDER$$$
+
+
+    @Override
+    public String getCode() {
+        return this.base64Code;
+    }
+}

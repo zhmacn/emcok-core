@@ -19,7 +19,7 @@ public class EMFieldInfo {
     private final boolean isArrayIndex;
     private Field nativeField;
     private int index;
-    List<String> fieldTrace;
+    private final List<String> fieldTrace;
 
     public boolean isArrayIndex() {
         return isArrayIndex;
