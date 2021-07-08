@@ -3,13 +3,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>io.github.pony1991</groupId>
+    <groupId>io.github.zhmacn</groupId>
     <artifactId>emock-core</artifactId>
     <version>1.0.0</version>
 
     <name>emock-core</name>
     <description>a mock plugin for java application</description>
-    <url>https://github.com/pony1991/emock-core</url>
+    <url>https://github.com/zhmacn/emock-core</url>
     <licenses>
         <license>
             <name>MIT License</name>
@@ -21,18 +21,18 @@
         <developer>
             <email>zhmacn@163.com</email>
             <name>zenghui.ma</name>
-            <url>https://github.com/pony1991/emock-core</url>
+            <url>https://github.com/zhmacn/emock-core</url>
             <id>pony1991</id>
         </developer>
     </developers>
     <issueManagement>
         <system>Github Issue</system>
-        <url>https://github.com/pony1991/emock-core/issues</url>
+        <url>https://github.com/zhmacn/emock-core/issues</url>
     </issueManagement>
     <scm>
-        <connection>scm:git@github.com:pony1991/emock-core.git</connection>
-        <developerConnection>scm:git@github.com:pony1991/emock-core.git</developerConnection>
-        <url>git@github.com:pony1991/emock-core.git</url>
+        <connection>scm:git@github.com:zhmacn/emock-core.git</connection>
+        <developerConnection>scm:git@github.com:zhmacn/emock-core.git</developerConnection>
+        <url>git@github.com:zhmacn/emock-core.git</url>
     </scm>
 
     <distributionManagement>
