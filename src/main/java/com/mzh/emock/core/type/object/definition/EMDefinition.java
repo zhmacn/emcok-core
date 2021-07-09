@@ -48,7 +48,6 @@ public class EMDefinition<T, A> extends IDObject {
 
     private final Map<Class<?>, Object> annotations = new ConcurrentHashMap<>();
 
-    private EMObjectWrapper<T> emDefinition;
 
     private final EMMethodInvoker.SimpleInvoker<EMObjectWrapper<T>, Supplier<A>> methodInvoker = new EMMethodInvoker.SimpleInvoker<EMObjectWrapper<T>, Supplier<A>>() {
         @Override
@@ -91,8 +90,8 @@ public class EMDefinition<T, A> extends IDObject {
         this.order = emock.order();
     }
 
-    public void createDefinition(Supplier<A> args) throws Exception {
-        this.emDefinition = this.methodInvoker.invoke(args);
+    public EMObjectWrapper<T> createObjectWrapper(Supplier<A> args) throws Exception {
+        return this.methodInvoker.invoke(args);
     }
 
 
@@ -116,9 +115,6 @@ public class EMDefinition<T, A> extends IDObject {
         return targetClz;
     }
 
-    public EMObjectWrapper<T> getDefinition() {
-        return emDefinition;
-    }
 
     public Method getSrcMethod() {
         return srcMethod;

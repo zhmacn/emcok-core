@@ -14,15 +14,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class EMObjectUtil {
-
+    private static final List<Class<?>> RECURSION_EXCLUDE=Arrays.asList(
+            Class.class, Constructor.class,Method.class,Field.class,
+            Type.class, BigDecimal.class, BigInteger.class, AtomicLong.class, AtomicInteger.class,
+            Enum.class,String.class,Character.class ,Boolean.class,Byte.class ,
+            Short.class  ,Integer.class  ,Long.class,Float.class  ,Double.class
+    );
     private static final AtomicLong idSequence=new AtomicLong(0);
 
     private static final int initSize=2000;
     private static final Set<Object> hasRead=new HashSet<>(initSize);
     private static Object currentTarget=null;
-    private static final List<Class<?>> excludeClz=Arrays.asList(
-            Class.class, Constructor.class,Method.class,Field.class,
-            Type.class, BigDecimal.class, BigInteger.class, AtomicLong.class, AtomicInteger.class);
 
     private final Map<Object,List<EMFieldInfo>> holdingObject=new EMObjectMap<>();
     private boolean hasRead(Object o){
@@ -115,11 +117,11 @@ public class EMObjectUtil {
 
     private boolean isIncludeField(Field srcField){
         Class<?> type=EMClassUtil.getRawType(srcField.getType());
-        return EMClassUtil.isReferenceField(type) && !excludeClz.contains(type);
+        return EMClassUtil.isReferenceField(type) && !RECURSION_EXCLUDE.contains(type);
     }
     private boolean isIncludeClazz(Class<?> srcType){
         Class<?> type=EMClassUtil.getRawType(srcType);
-        return EMClassUtil.isReferenceField(type) && !excludeClz.contains(type);
+        return EMClassUtil.isReferenceField(type) && !RECURSION_EXCLUDE.contains(type);
     }
 
 }

@@ -1,6 +1,5 @@
 package com.mzh.emock.core.util;
 
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -9,7 +8,7 @@ import java.util.function.Function;
 
 public class EMClassUtil {
 
-    public static void hierarchyClazz(Class<?> curr, Consumer<Class<?>> consumer) {
+    public static void recursionClazz(Class<?> curr, Consumer<Class<?>> consumer) {
         while (curr != null) {
             consumer.accept(curr);
             curr = curr.getSuperclass();
@@ -24,16 +23,13 @@ public class EMClassUtil {
     }
 
     public static boolean isReferenceField(Class<?> type) {
-        return  !type.isEnum() && !type.isPrimitive() && type != String.class
-                && type != Character.class && type != Boolean.class
-                && type != Byte.class && type != Short.class && type != Integer.class && type != Long.class
-                && type != Float.class && type != Double.class;
+        return  !type.isPrimitive();
     }
 
 
     public static List<Field> getAllDeclaredFields(Class<?> clz, Function<Field,Boolean> filter) {
         List<Field> res = new ArrayList<>();
-        hierarchyClazz(clz, c -> {
+        recursionClazz(clz, c -> {
             Field[] fields = c.getDeclaredFields();
             for (Field field : fields) {
                 if (filter.apply(field)) { res.add(field); }
@@ -44,7 +40,7 @@ public class EMClassUtil {
 
     public static List<Method> getAllMethods(Class<?> clz,Function<Method,Boolean> filter){
         List<Method> res=new ArrayList<>();
-        hierarchyClazz(clz,c->{
+        recursionClazz(clz,c->{
             Method[] methods=c.getMethods();
             for(Method method:methods){
                 if(filter.apply(method)){ res.add(method);}

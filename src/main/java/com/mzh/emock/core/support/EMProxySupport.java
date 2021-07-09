@@ -1,5 +1,6 @@
 package com.mzh.emock.core.support;
 
+import com.mzh.emock.core.context.EMContext;
 import com.mzh.emock.core.type.EMObjectGroup;
 import com.mzh.emock.core.type.proxy.EMProxyHolder;
 import net.sf.cglib.proxy.Enhancer;

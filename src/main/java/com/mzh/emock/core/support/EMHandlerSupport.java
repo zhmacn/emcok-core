@@ -1,5 +1,6 @@
 package com.mzh.emock.core.support;
 
+import com.mzh.emock.core.context.EMContext;
 import com.mzh.emock.core.type.object.EMObjectInfo;
 import com.mzh.emock.core.type.object.method.EMMethodInfo;
 import com.mzh.emock.core.type.object.method.EMMethodInvoker;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 public class EMHandlerSupport {
-    private EMContext context;
+    private final EMContext context;
 
     @FunctionalInterface
     private interface DoElse<T>{
