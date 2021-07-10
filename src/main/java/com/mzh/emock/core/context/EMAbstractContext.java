@@ -18,6 +18,7 @@ import java.util.function.Supplier;
 
 /**
  * default implement of EMContext
+ * @author zhma
  */
 public class EMAbstractContext implements EMContext {
     private final Logger logger=Logger.get(EMAbstractContext.class);
@@ -32,41 +33,57 @@ public class EMAbstractContext implements EMContext {
         this.loader=EMAbstractContext.class.getClassLoader();
     }
 
-    protected <T> boolean loadDefinition(Class<T> tClass,Class<T> aClass) throws EMDefinitionException, ClassNotFoundException {
+    /**
+     * 加载指定类中包含的emock定义
+     * @param tClass 需要加载mock定义的类
+     * @param aClass 加载该类参数的mock定义方法
+     * @param <T> 需要mock的类型
+     * @param <A> 参数的类型
+     * @throws EMDefinitionException 传入的类为空
+     * @throws ClassNotFoundException 未找到需要加载的类
+     */
+    protected <T,A> void loadDefinition(Class<T> tClass,Class<A> aClass) throws EMDefinitionException, ClassNotFoundException {
         if(tClass==null){
             logger.info("call load definition ,clz is null");
-            return false;
         }
         List<Method> methods=EMClassUtil.getAllMethods(tClass, m->EMDefinitionUtil.checkMethod(m)
                 && (aClass==null || aClass.isAssignableFrom(m.getParameterTypes()[0])));
         for (Method m : methods) {
-            EMDefinition<T, ?> def = new EMDefinition<>(m,this.loader);
+            EMDefinition<T, A> def = new EMDefinition<>(m,this.loader,aClass);
             this.addDefinition(def.getTargetClz(),def);
         }
-        return true;
     }
 
-    protected <T,A> boolean createMock(T old, Supplier<A> args) throws Exception {
-        if(old==null){
-            return false;
-        }
+    /**
+     * 对于特定对象，创建其mock对象wrapper，并保存在当前context中
+     *
+     * @param tClass 需要生成wrapper的类
+     * @param args 生成wrapper所需的参数生成器
+     * @param <A> 参数生成器生成的参数的类型
+     * @throws Exception 无法找到对应的类等
+     */
+    protected <T,A> void createWrapper(Class<T> tClass, Supplier<A> args) throws Exception {
+        if(tClass==null || args==null){ return ;}
         for(Class<?> key:this.definitionMap.keySet()){
-            if(key.isAssignableFrom(old.getClass())){
-                updateMockObjectInfo((Class<T>)key,args,old);
+            if(key.isAssignableFrom(tClass)){
+                updateMockObjectInfo(key.cast(old),key,args);
             }
         }
-        return true;
     }
-    private <T,A> void updateMockObjectInfo(Class<T> clz,Supplier<A> args,T old) throws Exception {
+
+
+    private <T,ST,A> void updateMockObjectInfo(Class<T> clz,ST old,Supplier<A> args) throws Exception {
         List<EMDefinition<T,?>> definitions=this.getDefinitionList(clz);
         for(EMDefinition<T,?> definition:definitions){
-            EMObjectInfo<T,?> info=createMockObjectInfo((EMDefinition<T,A>)definition,args,old);
-            EMObjectGroup<T> group=getObjectGroup(old);
-            if(group==null){
-                group=new EMObjectGroup<>(old);
-                addObjectGroup(group);
+            if(definition.getParamClz().isAssignableFrom(aClass)) {
+                EMObjectInfo<T, A> info = createMockObjectInfo((EMDefinition<T, ? super A>) definition, args, old);
+                EMObjectGroup<T> group = getObjectGroup(old);
+                if (group == null) {
+                    group = new EMObjectGroup<>(old);
+                    addObjectGroup(group);
+                }
+                group.getEmMap().computeIfAbsent(clz, c -> new ArrayList<>()).add(info);
             }
-            group.getEmMap().computeIfAbsent(clz,c->new ArrayList<>()).add(info);
         }
     }
     private <T,A> EMObjectInfo<T,A> createMockObjectInfo(EMDefinition<T,A> definition,Supplier<A> args,T old) throws Exception {

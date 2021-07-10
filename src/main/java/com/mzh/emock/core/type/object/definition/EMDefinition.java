@@ -39,6 +39,7 @@ public class EMDefinition<T, A> extends IDObject {
     private final Method srcMethod;
     private final Class<?> srcClz;
     private final Class<T> targetClz;
+    private final Class<A> paramClz;
 
     private String name;
     private int order;
@@ -57,13 +58,17 @@ public class EMDefinition<T, A> extends IDObject {
         }
     };
 
-    public EMDefinition(Method srcMethod, ClassLoader loader) throws EMDefinitionException,ClassNotFoundException {
-        if(srcMethod==null || loader==null){
+    public EMDefinition(Method srcMethod, ClassLoader loader,Class<A> paramClz) throws EMDefinitionException,ClassNotFoundException {
+        if(srcMethod==null || loader==null || paramClz == null){
             throw new EMDefinitionException("method or classloader can not be null");
         }
         if(!EMDefinitionUtil.checkMethod(srcMethod)){
             throw new EMDefinitionException("method {0} is not a emock definition source",srcMethod.getName());
         }
+        if(!paramClz.isAssignableFrom(srcMethod.getParameterTypes()[0])){
+            throw new EMDefinitionException("method {0} paramClz {1} is not assignable from {2} ",srcMethod.getName(),paramClz,srcMethod.getParameterTypes()[0]);
+        }
+        this.paramClz =paramClz;
         this.mockClzLoader=loader;
         this.srcMethod = srcMethod;
         this.srcClz = srcMethod.getDeclaringClass();
@@ -137,4 +142,7 @@ public class EMDefinition<T, A> extends IDObject {
         return reverseEnabledMethods;
     }
 
+    public Class<A> getParamClz() {
+        return paramClz;
+    }
 }
