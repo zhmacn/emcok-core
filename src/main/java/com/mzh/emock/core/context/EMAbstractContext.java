@@ -34,39 +34,53 @@ public class EMAbstractContext implements EMContext {
     }
 
     /**
-     * 加载指定类中包含的emock定义
-     * @param tClass 需要加载mock定义的类
-     * @param aClass 加载该类参数的mock定义方法
+     * load mock method form source class (sClass)
+     * @param sClass the mock method definition class
+     *               which class should be search mock method
+     * @param aClass the parameter type of method
+     *               filter the mock method to be loaded
+     *               example:
+     *                  when
+     *                     aClass is A
+     *                  then
+     *                     the method which parameter type is a sign of A will be loaded
      * @param <T> 需要mock的类型
      * @param <A> 参数的类型
      * @throws EMDefinitionException 传入的类为空
      * @throws ClassNotFoundException 未找到需要加载的类
      */
-    protected <T,A> void loadDefinition(Class<T> tClass,Class<A> aClass) throws EMDefinitionException, ClassNotFoundException {
-        if(tClass==null){
+    protected <T,A> void loadDefinition(Class<?> sClass,Class<T> tClass,Class<A> aClass) throws EMDefinitionException, ClassNotFoundException {
+        if(sClass==null){
             logger.info("call load definition ,clz is null");
         }
-        List<Method> methods=EMClassUtil.getAllMethods(tClass, m->EMDefinitionUtil.checkMethod(m)
-                && (aClass==null || aClass.isAssignableFrom(m.getParameterTypes()[0])));
+        List<Method> methods=EMClassUtil.getAllMethods(fClass, m->EMDefinitionUtil.checkMethod(m)
+                && (aClass==null || m.getParameterTypes()[0].isAssignableFrom(aClass)));
         for (Method m : methods) {
-            EMDefinition<T, A> def = new EMDefinition<>(m,this.loader,aClass);
+            EMDefinition<?, A> def = new EMDefinition<>(m,this.loader,aClass);
             this.addDefinition(def.getTargetClz(),def);
         }
     }
 
     /**
-     * 对于特定对象，创建其mock对象wrapper，并保存在当前context中
+     * create wrapper in definition
+     *
      *
      * @param tClass 需要生成wrapper的类
      * @param args 生成wrapper所需的参数生成器
      * @param <A> 参数生成器生成的参数的类型
      * @throws Exception 无法找到对应的类等
      */
-    protected <T,A> void createWrapper(Class<T> tClass, Supplier<A> args) throws Exception {
+    protected <T,A> void createWrapper(Class<T> tClass,Class<A> aClass,Supplier<A> args) throws Exception {
         if(tClass==null || args==null){ return ;}
         for(Class<?> key:this.definitionMap.keySet()){
             if(key.isAssignableFrom(tClass)){
-                updateMockObjectInfo(key.cast(old),key,args);
+                List<EMDefinition<?,?>> definitions=this.definitionMap.get(key);
+                for(EMDefinition<?,?> definition:definitions){
+                   Class<?> pClz=definition.getParamClz();
+                   if(pClz.isAssignableFrom(aClass)){
+                       definition.createObjectWrapper(args);
+                   }
+                }
             }
         }
     }
