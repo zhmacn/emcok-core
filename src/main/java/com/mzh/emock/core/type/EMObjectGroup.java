@@ -9,10 +9,10 @@ import java.util.Map;
 
 public class EMObjectGroup<T> extends IDObject{
     private final T oldObject;
-    private final Map<Class<T>,List<EMObjectInfo<T,?>>> emMap=new EMObjectMap<>();
-    private final Map<Class<T>,EMProxyHolder<T>> proxyHolderMap=new EMObjectMap<>();
+    private final Map<Class<? super T>,List<EMObjectInfo<? super T,?>>> emMap=new EMObjectMap<>();
+    private final Map<Class<? super T>,EMProxyHolder<? super T>> proxyHolderMap=new EMObjectMap<>();
 
-    public EMObjectGroup(T oldObject){
+    public  EMObjectGroup(T oldObject){
         this.oldObject=oldObject;
     }
 
@@ -20,11 +20,11 @@ public class EMObjectGroup<T> extends IDObject{
         return oldObject;
     }
 
-    public Map<Class<T>, List<EMObjectInfo<T, ?>>> getEmMap() {
+    public Map<Class<? super T>, List<EMObjectInfo<? super T, ?>>> getEmMap() {
         return emMap;
     }
 
-    public Map<Class<T>, EMProxyHolder<T>> getProxyHolderMap() {
+    public Map<Class<? super T>, EMProxyHolder<? super T>> getProxyHolderMap() {
         return proxyHolderMap;
     }
 }

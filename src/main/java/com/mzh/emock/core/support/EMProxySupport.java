@@ -22,18 +22,19 @@ public class EMProxySupport {
         handlerSupport=new EMHandlerSupport(context);
     }
 
-    public <T> EMProxyHolder<T> createProxy(Class<T> targetClz, T oldBean) {
-        EMProxyHolder<T> cached = findCreatedProxy(targetClz, oldBean);
+    @SuppressWarnings("unchecked")
+    public <T extends S,S> EMProxyHolder<S> createProxy(Class<S> targetClz, T oldBean) {
+        EMProxyHolder<S> cached = findCreatedProxy(targetClz, oldBean);
         if (cached != null) {
             return cached;
         }
-        T proxy =(targetClz.isInterface() ? createInterfaceProxy(targetClz, oldBean)
+        S proxy =(targetClz.isInterface() ? createInterfaceProxy(targetClz, oldBean)
                 : createClassProxy(oldBean, targetClz));
         context.getObjectGroup(oldBean).getProxyHolderMap().put(targetClz, new EMProxyHolder<>(proxy));
-        return context.getObjectGroup(oldBean).getProxyHolderMap().get(targetClz);
+        return (EMProxyHolder<S>) context.getObjectGroup(oldBean).getProxyHolderMap().get(targetClz);
     }
 
-    private <T> T createInterfaceProxy(Class<T> inf, T oldBean) {
+    private <T extends S,S> S createInterfaceProxy(Class<S> inf, T oldBean) {
         if (oldBean instanceof Proxy) {
             InvocationHandler oldHandler = Proxy.getInvocationHandler(oldBean);
             return inf.cast(Proxy.newProxyInstance(loader, new Class[]{inf},
@@ -49,12 +50,13 @@ public class EMProxySupport {
         return createEnhance(oldBean, handlerSupport.getEnhanceInterceptor(oldBean, injectClz));
     }
 
-    private <T> EMProxyHolder<T> findCreatedProxy(Class<T> targetClz, T oldBean) {
+    @SuppressWarnings("unchecked")
+    private <T extends S,S> EMProxyHolder<S> findCreatedProxy(Class<S> targetClz, T oldBean) {
         EMObjectGroup<T> group = context.getObjectGroup(oldBean);
         if (group == null) {
             return null;
         }
-        return group.getProxyHolderMap().get(targetClz);
+        return (EMProxyHolder<S>) group.getProxyHolderMap().get(targetClz);
     }
 
     @SuppressWarnings("unchecked")

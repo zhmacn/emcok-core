@@ -10,9 +10,7 @@ import com.mzh.emock.core.util.EMClassUtil;
 import com.mzh.emock.core.util.EMDefinitionUtil;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
@@ -37,27 +35,28 @@ public class EMAbstractContext implements EMContext {
      * load mock method form source class (sClass)
      * @param sClass the mock method definition class
      *               which class should be search mock method
-     * @param aClass the parameter type of method
-     *               filter the mock method to be loaded
-     *               example:
-     *                  when
-     *                     aClass is A
-     *                  then
-     *                     the method which parameter type is a sign of A will be loaded
-     * @param <T> 需要mock的类型
-     * @param <A> 参数的类型
-     * @throws EMDefinitionException 传入的类为空
-     * @throws ClassNotFoundException 未找到需要加载的类
+     * @param tFilter the return type of method
+     *               filter the mock method by the generic type of return type EMDefinition
+     * @param aFilter the parameter type of method
+     *               filter the mock method by the generic type of param type Supplier
+     * @param <T> the generic type of EMDefinition
+     * @param <A> the generic type of Supplier
+     * @throws EMDefinitionException sClass is null
      */
-    protected <T,A> void loadDefinition(Class<?> sClass,Class<T> tClass,Class<A> aClass) throws EMDefinitionException, ClassNotFoundException {
+    protected <T,A> void loadDefinition(Class<?> sClass,Class<T> tFilter,Class<A> aFilter) throws EMDefinitionException {
         if(sClass==null){
             logger.info("call load definition ,clz is null");
+            throw new EMDefinitionException("call load definition ,sClz is null");
         }
-        List<Method> methods=EMClassUtil.getAllMethods(fClass, m->EMDefinitionUtil.checkMethod(m)
-                && (aClass==null || m.getParameterTypes()[0].isAssignableFrom(aClass)));
+        List<Method> methods=EMClassUtil.getAllMethods(sClass, m->EMDefinitionUtil.checkMethod(m)
+                && (aFilter==null || EMClassUtil.isSuperClass(EMClassUtil.getParameterizedTypeClass(m.getGenericParameterTypes()[0]).get(0),aFilter))
+                && (tFilter==null || EMClassUtil.isSubClass(EMClassUtil.getParameterizedTypeClass(m.getGenericReturnType()).get(0),tFilter))
+        );
         for (Method m : methods) {
-            EMDefinition<?, A> def = new EMDefinition<>(m,this.loader,aClass);
-            this.addDefinition(def.getTargetClz(),def);
+            EMDefinition<?, ?> def = new EMDefinition<>(m,this.loader,
+                    EMClassUtil.getParameterizedTypeClass(m.getGenericReturnType()).get(0),
+                    EMClassUtil.getParameterizedTypeClass(m.getGenericParameterTypes()[0]).get(0));
+            this.addDefinition(def);
         }
     }
 
@@ -65,20 +64,25 @@ public class EMAbstractContext implements EMContext {
      * create wrapper in definition
      *
      *
-     * @param tClass 需要生成wrapper的类
-     * @param args 生成wrapper所需的参数生成器
-     * @param <A> 参数生成器生成的参数的类型
+     * @param tFilter the return type of the method
+     *                filter the definition by return type to create wrapper
+     * @param aFilter the parameter type of method
+     *                filter the definition by parameter type to create wrapper
+     * @param args the parameters to create wrapper
+     * @param <A> the parameter type
+     * @param <T> the return type
      * @throws Exception 无法找到对应的类等
      */
-    protected <T,A> void createWrapper(Class<T> tClass,Class<A> aClass,Supplier<A> args) throws Exception {
-        if(tClass==null || args==null){ return ;}
+    @SuppressWarnings("unchecked")
+    protected <T,A> void createWrapper(Class<T> tFilter,Class<A> aFilter,Supplier<? extends A> args) throws Exception {
+        if(args==null || aFilter==null){ return ;}
         for(Class<?> key:this.definitionMap.keySet()){
-            if(key.isAssignableFrom(tClass)){
+            if(tFilter==null || EMClassUtil.isSubClass(key,tFilter)){
                 List<EMDefinition<?,?>> definitions=this.definitionMap.get(key);
                 for(EMDefinition<?,?> definition:definitions){
-                   Class<?> pClz=definition.getParamClz();
-                   if(pClz.isAssignableFrom(aClass)){
-                       definition.createObjectWrapper(args);
+                   if(EMClassUtil.isSuperClass(definition.getParamClz(),aFilter)){
+                       EMDefinition<T,? super A> rem=(EMDefinition<T,? super A>)definition;
+                       rem.createObjectWrapper(args);
                    }
                 }
             }
@@ -86,26 +90,40 @@ public class EMAbstractContext implements EMContext {
     }
 
 
-    private <T,ST,A> void updateMockObjectInfo(Class<T> clz,ST old,Supplier<A> args) throws Exception {
-        List<EMDefinition<T,?>> definitions=this.getDefinitionList(clz);
-        for(EMDefinition<T,?> definition:definitions){
-            if(definition.getParamClz().isAssignableFrom(aClass)) {
-                EMObjectInfo<T, A> info = createMockObjectInfo((EMDefinition<T, ? super A>) definition, args, old);
-                EMObjectGroup<T> group = getObjectGroup(old);
-                if (group == null) {
-                    group = new EMObjectGroup<>(old);
-                    addObjectGroup(group);
+    /**
+     * create or update mock info by old object
+     * @param old the oldObject
+     * @param <T> the old object type
+     * @throws Exception throw exception when call invoke method
+     */
+    @SuppressWarnings("unchecked")
+    private <T extends S,S> void updateMockObjectInfo(T old) throws Exception {
+        Set<Class<?>> keys=this.definitionMap.keySet();
+        for(Class<?> key:keys){
+            if(EMClassUtil.isSubClass(old.getClass(),key)){
+                List<EMDefinition<?,?>> definitions=this.definitionMap.get(key);
+                for(EMDefinition<?,?> definition:definitions){
+                    EMObjectWrapper<S> wrapper=(EMObjectWrapper<S>) definition.getWrapper();
+                    if(wrapper==null){
+                        logger.info("update mock object warning,no wrapper,object class : "
+                                +old.hashCode()+",definition id :"+definition.getId());
+                        continue;
+                    }
+                    update(old,wrapper.wrap(old),(EMDefinition<S, ?>) definition);
                 }
-                group.getEmMap().computeIfAbsent(clz, c -> new ArrayList<>()).add(info);
             }
         }
     }
-    private <T,A> EMObjectInfo<T,A> createMockObjectInfo(EMDefinition<T,A> definition,Supplier<A> args,T old) throws Exception {
-        EMObjectWrapper<T> wrapper=definition.createObjectWrapper(args);
-        return new EMObjectInfo<>(wrapper.wrap(old),definition);
+
+    private <T extends S,S> void update(T old,S mock,EMDefinition<S,?> definition){
+        this.objectGroupMap.computeIfAbsent(old,o->new EMObjectGroup<>(old));
+        EMObjectGroup<T> group=getObjectGroup(old);
+        group.getEmMap().computeIfAbsent(definition.getTargetClz(),c->new ArrayList<>());
+        group.getEmMap().get(definition.getTargetClz()).add(new EMObjectInfo<>(mock,definition));
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> EMObjectGroup<T> getObjectGroup(T object) {
         return (EMObjectGroup<T>) this.objectGroupMap.get(object);
     }
@@ -116,13 +134,31 @@ public class EMAbstractContext implements EMContext {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> List<EMDefinition<T, ?>> getDefinitionList(Class<T> tClass) {
-        return definitionMap.get(tClass);
+        List<EMDefinition<?,?>> definitions=this.definitionMap.get(tClass);
+        List<EMDefinition<T,?>> rl=new ArrayList<>();
+        for(EMDefinition<?,?> definition:definitions) {
+            EMDefinition<T, ?> rdm = (EMDefinition<T, ?>) definition;
+            rl.add(rdm);
+        }
+        return Collections.unmodifiableList(rl);
+
     }
 
     @Override
-    public <T, A> void addDefinition(Class<T> tClass, EMDefinition<T, A> def) {
-        this.definitionMap.computeIfAbsent(tClass,k->new ArrayList<>());
-        this.definitionMap.get(tClass).add(def);
+    public <T, A> void addDefinition(EMDefinition<T, A> def) {
+        this.definitionMap.computeIfAbsent(def.getTargetClz(),k->new ArrayList<>());
+        this.definitionMap.get(def.getTargetClz()).add(def);
+    }
+
+    @Override
+    public Set<Class<?>> getDefinitionKeys() {
+        return this.definitionMap.keySet();
+    }
+
+    @Override
+    public Set<Object> getOldObjects() {
+        return this.objectGroupMap.keySet();
     }
 }

@@ -5,9 +5,11 @@ import com.mzh.emock.core.type.EMock;
 import com.mzh.emock.core.type.IDObject;
 import com.mzh.emock.core.type.object.EMObjectWrapper;
 import com.mzh.emock.core.type.object.method.EMMethodInvoker;
+import com.mzh.emock.core.util.EMClassUtil;
 import com.mzh.emock.core.util.EMDefinitionUtil;
 import com.mzh.emock.core.util.EMStringUtil;
 
+import javax.naming.ldap.SortResponseControl;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -47,40 +49,39 @@ public class EMDefinition<T, A> extends IDObject {
     private boolean methodEnableMock;
     private String[] reverseEnabledMethods;
 
+    private EMObjectWrapper<T> wrapper;
+
     private final Map<Class<?>, Object> annotations = new ConcurrentHashMap<>();
 
 
-    private final EMMethodInvoker.SimpleInvoker<EMObjectWrapper<T>, Supplier<A>> methodInvoker = new EMMethodInvoker.SimpleInvoker<EMObjectWrapper<T>, Supplier<A>>() {
+    private final EMMethodInvoker.SimpleInvoker<EMObjectWrapper<T>, Supplier<? extends A>> methodInvoker = new EMMethodInvoker.SimpleInvoker<EMObjectWrapper<T>, Supplier<? extends A>>() {
         @Override
         @SuppressWarnings("unchecked")
-        public EMObjectWrapper<T> invoke(Supplier<A> args) throws InvocationTargetException, IllegalAccessException {
+        public EMObjectWrapper<T> invoke(Supplier<? extends A> args) throws InvocationTargetException, IllegalAccessException {
             return (EMObjectWrapper<T>) srcMethod.invoke(null, args);
         }
     };
 
-    public EMDefinition(Method srcMethod, ClassLoader loader,Class<A> paramClz) throws EMDefinitionException,ClassNotFoundException {
-        if(srcMethod==null || loader==null || paramClz == null){
-            throw new EMDefinitionException("method or classloader can not be null");
+    public EMDefinition(Method srcMethod, ClassLoader loader,Class<T> methodReturn,Class<A> methodParameter) throws EMDefinitionException {
+        if(srcMethod==null || loader==null || methodReturn==null || methodParameter==null){
+            throw new EMDefinitionException("method and loader can not be null");
         }
         if(!EMDefinitionUtil.checkMethod(srcMethod)){
-            throw new EMDefinitionException("method {0} is not a emock definition source",srcMethod.getName());
+            throw new EMDefinitionException("the method is not a em method {0}",srcMethod.getName());
         }
-        if(!paramClz.isAssignableFrom(srcMethod.getParameterTypes()[0])){
-            throw new EMDefinitionException("method {0} paramClz {1} is not assignable from {2} ",srcMethod.getName(),paramClz,srcMethod.getParameterTypes()[0]);
+        Class<?> rc=EMClassUtil.getParameterizedTypeClass(srcMethod.getGenericReturnType()).get(0);
+        Class<?> pc=EMClassUtil.getParameterizedTypeClass(srcMethod.getGenericParameterTypes()[0]).get(0);
+        if(rc!=methodReturn || pc!=methodParameter){
+            throw new EMDefinitionException("parameter error");
         }
-        this.paramClz =paramClz;
+        this.paramClz =methodParameter;
         this.mockClzLoader=loader;
         this.srcMethod = srcMethod;
         this.srcClz = srcMethod.getDeclaringClass();
-        this.targetClz=parseTargetClz();
+        this.targetClz=methodReturn;
         resolveAnnotations();
     }
 
-    @SuppressWarnings("unchecked")
-    private Class<T> parseTargetClz()throws ClassNotFoundException{
-        String clzName = ((ParameterizedType)srcMethod .getGenericReturnType()).getActualTypeArguments()[0].getTypeName();
-        return (Class<T>)this.mockClzLoader.loadClass(clzName);
-    }
     private void resolveAnnotations() {
         Annotation[] annotations = srcMethod.getAnnotations();
         for (Annotation annotation : annotations) {
@@ -95,12 +96,12 @@ public class EMDefinition<T, A> extends IDObject {
         this.order = emock.order();
     }
 
-    public EMObjectWrapper<T> createObjectWrapper(Supplier<A> args) throws Exception {
-        return this.methodInvoker.invoke(args);
+    public void createObjectWrapper(Supplier<? extends A> args) throws Exception {
+        this.wrapper= this.methodInvoker.invoke(args);
     }
 
 
-    public EMMethodInvoker.SimpleInvoker<EMObjectWrapper<T>, Supplier<A>> getMethodInvoker() {
+    public EMMethodInvoker.SimpleInvoker<EMObjectWrapper<T>, Supplier<? extends A>> getMethodInvoker() {
         return methodInvoker;
     }
 
@@ -144,5 +145,9 @@ public class EMDefinition<T, A> extends IDObject {
 
     public Class<A> getParamClz() {
         return paramClz;
+    }
+
+    public EMObjectWrapper<T> getWrapper() {
+        return wrapper;
     }
 }
