@@ -1,26 +1,35 @@
 package com.mzh.emock.core.compiler;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * @author zhma
+ * 从指定的内存字节码中加载类
+ */
 class MemoryClassLoader extends URLClassLoader {
-
-    Map<String, byte[]> classBytes = new HashMap<>();
-
-    public MemoryClassLoader(Map<String, byte[]> classBytes) {
-        super(new URL[0], MemoryClassLoader.class.getClassLoader());
-        this.classBytes.putAll(classBytes);
+    private static final MemoryClassLoader memoryClassLoader=new MemoryClassLoader();
+    private static final ThreadLocal<Map<String,byte[]>> localBytes=new ThreadLocal<>();
+    public static Class<?> loadFromBytes(String name, Map<String, byte[]> classBytes) throws ClassNotFoundException, IOException {
+        localBytes.set(classBytes);
+        return memoryClassLoader.loadClass(name);
+    }
+    private MemoryClassLoader() {
+        super(new URL[0],MemoryClassLoader.class.getClassLoader());
     }
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-        byte[] buf = classBytes.get(name);
-        if (buf == null) {
-            return super.findClass(name);
+        if(localBytes.get()==null || localBytes.get().get(name)==null){
+            localBytes.remove();
+            throw new ClassNotFoundException("load class from byte map,name:"+name);
         }
-        classBytes.remove(name);
-        return defineClass(name, buf, 0, buf.length);
+        byte[] code=localBytes.get().get(name);
+        Class<?> clz= defineClass(name, code, 0, code.length);
+        localBytes.remove();
+        return clz;
     }
 
 }

@@ -22,11 +22,11 @@ public class EMHandlerSupport {
         T get() throws Throwable;
     }
 
-    private static class ESimpleInvoker<R> implements EMMethodInvoker.SimpleInvoker<R, Object[]> {
-        private final Object object;
+    private static class ESimpleInvoker<T,R> implements EMMethodInvoker.SimpleInvoker<R, Object[]> {
+        private final T object;
         private final Method method;
 
-        ESimpleInvoker(Object object, Method method) {
+        ESimpleInvoker(T object, Method method) {
             this.object = object;
             this.method = method;
         }
@@ -38,12 +38,12 @@ public class EMHandlerSupport {
         }
     }
 
-    private abstract class EInvocationHandler{
-        protected final Object oldObject;
-        protected final Class<?> injectClz;
-        public EInvocationHandler(Object oldObject,Class<?> injectClz){
+    private abstract class EInvocationHandler<T extends S,S>{
+        protected final T oldObject;
+        protected final Class<S> targetClass;
+        public EInvocationHandler(T oldObject,Class<S> targetClass){
             this.oldObject=oldObject;
-            this.injectClz=injectClz;
+            this.targetClass=targetClass;
         }
         private class MockResult{
             private boolean mock;
@@ -68,35 +68,31 @@ public class EMHandlerSupport {
             }
         }
 
-        protected Object tryNoProxyMethod(Object proxy, Method method, Object[] args){
+        protected Object tryNoProxyMethod(S proxy, Method method, Object[] args){
             String name=method.getName();
             switch (name){
                 case "hashCode":
-                    return context.getObjectGroup(oldObject).getProxyHolderMap().get(injectClz).getProxyHash();
+                    return context.getObjectGroup(oldObject).getProxyHolder(targetClass).getProxyHash();
                 case "toString":
-                    return proxy.getClass().getName()+"@EM:+"+proxy.hashCode();
+                    return oldObject.getClass().getName()+"@"+oldObject.hashCode()+":mock by-->"+proxy.getClass()+"@"+proxy.hashCode();
                 case "equals":
                     return proxy==args[0];
             }
             return null;
         }
-        protected Object doMockElse(Object proxy,Method method,Object[] args, DoElse<Object> doElse)throws Throwable{
+        protected Object doMockElse(S proxy,Method method,Object[] args, DoElse<Object> doElse)throws Throwable{
             MockResult result = doMock(proxy, method, args);
             return result.isMock() ?result.getResult(): doElse.get();
         }
 
-        protected MockResult doMock(Object o, Method method, Object[] args) throws Exception {
+        protected MockResult doMock(S o, Method method, Object[] args) throws Exception {
             MockResult result=new MockResult();
-            List<? extends EMObjectInfo<?, ?>> mockObjectInfoList=null;
-            if (context.getObjectGroup(oldObject) != null
-                    && context.getObjectGroup(oldObject).getEmMap()!=null
-                    && context.getObjectGroup(oldObject).getEmMap().get(injectClz)!=null) {
-                mockObjectInfoList= context.getObjectGroup(oldObject).getEmMap().get(injectClz);
-            }
-            if(mockObjectInfoList==null || mockObjectInfoList.size()==0){
+
+            if (context.getObjectGroup(oldObject) == null || context.getObjectGroup(oldObject).getMockInfo(targetClass).size()==0) {
                 return result.setMock(false);
             }
-            for(EMObjectInfo<?,?> mockObjectInfo:mockObjectInfoList){
+            List<? extends EMObjectInfo<? super T, ?>> mockObjectInfoList=context.getObjectGroup(oldObject).getMockInfo(targetClass);
+            for(EMObjectInfo<? super T,?> mockObjectInfo:mockObjectInfoList){
                 if(mockObjectInfo.isMocked()){
                     Map<String, ? extends EMMethodInfo<?>> invokeMethods = mockObjectInfo.getInvokeMethods();
                     EMMethodInfo<?> methodInfo = invokeMethods.get(method.getName());
@@ -116,46 +112,46 @@ public class EMHandlerSupport {
 
     }
 
-    private class EInterfaceProxyInvocationHandler extends EInvocationHandler implements InvocationHandler {
-        public EInterfaceProxyInvocationHandler(Object oldObject,Class<?> injectClz) {
-            super(oldObject,injectClz);
+    private class EInterfaceProxyInvocationHandler<T extends S,S>  extends EInvocationHandler<T,S> implements InvocationHandler {
+        public EInterfaceProxyInvocationHandler(T oldObject,Class<S> targetClass) {
+            super(oldObject,targetClass);
         }
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            Object n=tryNoProxyMethod(proxy,method,args);
-            return n==null?doMockElse(proxy,method,args,()->method.invoke(oldObject,args)):n;
+            Object n=tryNoProxyMethod((S)proxy,method,args);
+            return n==null?doMockElse((S)proxy,method,args,()->method.invoke(oldObject,args)):n;
         }
     }
 
-    private class EObjectEnhanceInterceptor extends EInvocationHandler implements MethodInterceptor {
-        public EObjectEnhanceInterceptor(Object oldObject,Class<?> injectClz) {
-            super(oldObject,injectClz);
+    private class EObjectEnhanceInterceptor<T extends S,S> extends EInvocationHandler<T,S> implements MethodInterceptor {
+        public EObjectEnhanceInterceptor(T oldObject,Class<S> targetClass) {
+            super(oldObject,targetClass);
         }
 
         @Override
         public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
-            Object n=tryNoProxyMethod(proxy,method,args);
-            return n==null?doMockElse(proxy,method,args,()->method.invoke(oldObject,args)):n;
+            Object n=tryNoProxyMethod((S)proxy,method,args);
+            return n==null?doMockElse((S)proxy,method,args,()->method.invoke(oldObject,args)):n;
         }
     }
 
-    private class EProxyHandlerEnhanceInterceptor extends EInvocationHandler implements MethodInterceptor {
+    private class EProxyHandlerEnhanceInterceptor<T extends S,S> extends EInvocationHandler<T,S> implements MethodInterceptor {
         private final InvocationHandler oldHandler;
 
-        public EProxyHandlerEnhanceInterceptor(InvocationHandler oldHandler, Object oldObject,Class<?> injectClz ) {
-            super(oldObject, injectClz);
+        public EProxyHandlerEnhanceInterceptor(InvocationHandler oldHandler, T oldObject,Class<S> targetClass ) {
+            super(oldObject, targetClass);
             this.oldHandler = oldHandler;
         }
 
         @Override
         public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
-            Object noProxyResult=tryNoProxyMethod(proxy,method,args);
+            Object noProxyResult=tryNoProxyMethod(targetClass.cast(proxy),method,args);
             if(noProxyResult==null){
                 if(method.getName().equals("invoke")){
                     Method rMethod=(Method)args[0];
                     Object[] rArgs= Arrays.copyOfRange(args,1,args.length-1);
-                    return doMockElse(proxy,rMethod,rArgs,()->oldHandler.invoke(oldObject,rMethod,rArgs));
+                    return doMockElse((S)proxy,rMethod,rArgs,()->oldHandler.invoke(oldObject,rMethod,rArgs));
                 }
                 return method.invoke(oldHandler,args);
             }

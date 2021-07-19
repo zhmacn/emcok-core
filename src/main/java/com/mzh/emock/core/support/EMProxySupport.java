@@ -30,8 +30,8 @@ public class EMProxySupport {
         }
         S proxy =(targetClz.isInterface() ? createInterfaceProxy(targetClz, oldBean)
                 : createClassProxy(oldBean, targetClz));
-        context.getObjectGroup(oldBean).getProxyHolderMap().put(targetClz, new EMProxyHolder<>(proxy));
-        return (EMProxyHolder<S>) context.getObjectGroup(oldBean).getProxyHolderMap().get(targetClz);
+        context.getObjectGroup(oldBean).updateProxyHolder(new EMProxyHolder<>(targetClz,proxy));
+        return (EMProxyHolder<S>) context.getObjectGroup(oldBean).getProxyHolder(targetClz);
     }
 
     private <T extends S,S> S createInterfaceProxy(Class<S> inf, T oldBean) {
@@ -56,7 +56,7 @@ public class EMProxySupport {
         if (group == null) {
             return null;
         }
-        return (EMProxyHolder<S>) group.getProxyHolderMap().get(targetClz);
+        return (EMProxyHolder<S>) group.getProxyHolder(targetClz);
     }
 
     @SuppressWarnings("unchecked")

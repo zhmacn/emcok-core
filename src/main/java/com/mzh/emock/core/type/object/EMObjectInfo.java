@@ -14,7 +14,7 @@ public class EMObjectInfo<T,A> extends IDObject {
     private boolean isMocked;
     private T mockedObject;
     private EMDefinition<T,A> definition;
-    private Map<String, EMMethodInfo<T>> invokeMethods=new ConcurrentHashMap<>();
+    private Map<String, EMMethodInfo<?>> invokeMethods=new ConcurrentHashMap<>();
 
     public EMObjectInfo(T mo, EMDefinition<T,A> df){
         this.isMocked= df.isObjectEnableMock();
@@ -54,11 +54,11 @@ public class EMObjectInfo<T,A> extends IDObject {
         this.definition = definition;
     }
 
-    public Map<String, EMMethodInfo<T>> getInvokeMethods() {
+    public Map<String, EMMethodInfo<?>> getInvokeMethods() {
         return invokeMethods;
     }
 
-    public void setInvokeMethods(Map<String, EMMethodInfo<T>> invokeMethods) {
+    public void setInvokeMethods(Map<String, EMMethodInfo<?>> invokeMethods) {
         this.invokeMethods = invokeMethods;
     }
 }
