@@ -6,14 +6,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class EMProxyHolder<T> {
+public class EMProxyHolder<S> {
     private final int proxyHash;
-    private final Class<T> targetClass;
-    private T proxy;
+    private final Class<S> tClass;
+    private S proxy;
     private List<EMFieldInfo> injectField;
 
-    public EMProxyHolder(Class<T> targetClass,T proxy) {
-        this.targetClass=targetClass;
+    public EMProxyHolder(Class<S> tClass,S proxy) {
+        this.tClass=tClass;
         this.proxy = proxy;
         this.proxyHash=999000000+new Random().nextInt(1000000);
     }
@@ -22,11 +22,11 @@ public class EMProxyHolder<T> {
         return proxyHash;
     }
 
-    public T getProxy() {
+    public S getProxy() {
         return proxy;
     }
 
-    public void setProxy(T proxy) {
+    public void setProxy(S proxy) {
         this.proxy = proxy;
     }
 
@@ -46,7 +46,7 @@ public class EMProxyHolder<T> {
         injectField.add(fieldInfo);
     }
 
-    public Class<T> getTargetClass() {
-        return targetClass;
+    public Class<S> gettClass() {
+        return tClass;
     }
 }

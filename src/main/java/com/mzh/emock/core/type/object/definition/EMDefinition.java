@@ -32,16 +32,16 @@ import java.util.function.Supplier;
  *      do something;<br/>
  *  }
  * }
- *  @param <T> the target mock object type
+ *  @param <S> the target mock object type
  *  @param <A> supplier parameter return type
  */
-public class EMDefinition<T, A> extends IDObject {
+public class EMDefinition<S, A> extends IDObject {
 
-    private final ClassLoader mockClzLoader;
-    private final Method srcMethod;
-    private final Class<?> srcClz;
-    private final Class<T> targetClz;
-    private final Class<A> paramClz;
+    private final ClassLoader loader;
+    private final Method sMethod;
+    private final Class<?> sClass;
+    private final Class<S> tClass;
+    private final Class<A> aClass;
 
     private String name;
     private int order;
@@ -49,41 +49,41 @@ public class EMDefinition<T, A> extends IDObject {
     private boolean methodEnableMock;
     private String[] reverseEnabledMethods;
 
-    private EMObjectWrapper<T,? extends T> wrapper;
+    private EMObjectWrapper<S,? extends S> wrapper;
 
     private final Map<Class<?>, Object> annotations = new ConcurrentHashMap<>();
 
 
-    private final EMMethodInvoker.SimpleInvoker<EMObjectWrapper<T,? extends T>, Supplier<? extends A>> methodInvoker = new EMMethodInvoker.SimpleInvoker<EMObjectWrapper<T,? extends T>, Supplier<? extends A>>() {
+    private final EMMethodInvoker.SimpleInvoker<EMObjectWrapper<S,? extends S>, Supplier<? extends A>> methodInvoker = new EMMethodInvoker.SimpleInvoker<EMObjectWrapper<S,? extends S>, Supplier<? extends A>>() {
         @Override
         @SuppressWarnings("unchecked")
-        public EMObjectWrapper<T,? extends T> invoke(Supplier<? extends A> args) throws InvocationTargetException, IllegalAccessException {
-            return (EMObjectWrapper<T,? extends T>) srcMethod.invoke(null, args);
+        public EMObjectWrapper<S,? extends S> invoke(Supplier<? extends A> args) throws InvocationTargetException, IllegalAccessException {
+            return (EMObjectWrapper<S,? extends S>) sMethod.invoke(null, args);
         }
     };
 
-    public EMDefinition(Method srcMethod, ClassLoader loader,Class<T> methodReturn,Class<A> methodParameter) throws EMDefinitionException {
-        if(srcMethod==null || loader==null || methodReturn==null || methodParameter==null){
+    public EMDefinition(Method sMethod, ClassLoader loader,Class<S> rClass,Class<A> aClass) throws EMDefinitionException {
+        if(sMethod==null || loader==null || rClass==null || aClass==null){
             throw new EMDefinitionException("method and loader can not be null");
         }
-        if(!EMDefinitionUtil.checkMethod(srcMethod)){
-            throw new EMDefinitionException("the method is not a em method {0}",srcMethod.getName());
+        if(!EMDefinitionUtil.checkMethod(sMethod)){
+            throw new EMDefinitionException("the method is not a em method {0}",sMethod.getName());
         }
-        Class<?> rc=EMClassUtil.getParameterizedTypeClass(srcMethod.getGenericReturnType()).get(0);
-        Class<?> pc=EMClassUtil.getParameterizedTypeClass(srcMethod.getGenericParameterTypes()[0]).get(0);
-        if(rc!=methodReturn || pc!=methodParameter){
+        Class<?> rc=EMClassUtil.getParameterizedTypeClass(sMethod.getGenericReturnType()).get(0);
+        Class<?> pc=EMClassUtil.getParameterizedTypeClass(sMethod.getGenericParameterTypes()[0]).get(0);
+        if(rc!=rClass || pc!=aClass){
             throw new EMDefinitionException("parameter error");
         }
-        this.paramClz =methodParameter;
-        this.mockClzLoader=loader;
-        this.srcMethod = srcMethod;
-        this.srcClz = srcMethod.getDeclaringClass();
-        this.targetClz=methodReturn;
+        this.aClass = aClass;
+        this.loader= loader;
+        this.sMethod = sMethod;
+        this.sClass = sMethod.getDeclaringClass();
+        this.tClass= rClass;
         resolveAnnotations();
     }
 
     private void resolveAnnotations() {
-        Annotation[] annotations = srcMethod.getAnnotations();
+        Annotation[] annotations = sMethod.getAnnotations();
         for (Annotation annotation : annotations) {
             this.annotations.put(annotation.annotationType(), annotation);
         }
@@ -91,7 +91,7 @@ public class EMDefinition<T, A> extends IDObject {
         this.objEnableMock = emock.objectEnableMock();
         this.methodEnableMock = emock.methodEnableMock();
         String name = emock.name();
-        this.name = EMStringUtil.isEmpty(name) ? this.srcMethod.getName() : name;
+        this.name = EMStringUtil.isEmpty(name) ? this.sMethod.getName() : name;
         this.reverseEnabledMethods = emock.reverseEnabledMethod();
         this.order = emock.order();
     }
@@ -101,7 +101,7 @@ public class EMDefinition<T, A> extends IDObject {
     }
 
 
-    public EMMethodInvoker.SimpleInvoker<EMObjectWrapper<T,? extends T>, Supplier<? extends A>> getMethodInvoker() {
+    public EMMethodInvoker.SimpleInvoker<EMObjectWrapper<S,? extends S>, Supplier<? extends A>> getMethodInvoker() {
         return methodInvoker;
     }
 
@@ -113,17 +113,17 @@ public class EMDefinition<T, A> extends IDObject {
         return this.order;
     }
 
-    public Class<?> getSrcClz() {
-        return srcClz;
+    public Class<?> getSClass() {
+        return sClass;
     }
 
-    public Class<T> getTargetClz() {
-        return targetClz;
+    public Class<S> getTClass() {
+        return tClass;
     }
 
 
-    public Method getSrcMethod() {
-        return srcMethod;
+    public Method getSMethod() {
+        return sMethod;
     }
 
     public String getName() {
@@ -143,11 +143,13 @@ public class EMDefinition<T, A> extends IDObject {
         return reverseEnabledMethods;
     }
 
-    public Class<A> getParamClz() {
-        return paramClz;
+    public Class<A> getAClass() {
+        return aClass;
     }
 
-    public EMObjectWrapper<T,? extends T> getWrapper() {
+    public EMObjectWrapper<S,? extends S> getWrapper() {
         return wrapper;
     }
+
+    public ClassLoader getLoader(){return loader;}
 }

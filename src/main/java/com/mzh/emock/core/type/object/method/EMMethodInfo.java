@@ -10,13 +10,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class EMMethodInfo<R> extends IDObject {
     private String name;
     private boolean isMock;
-    private Method srcMethod;
+    private Method sMethod;
     private Map<String, EMMethodInvoker<R>> dynamicInvokers=new ConcurrentHashMap<>();
     private String enabledDynamicInvoker;
 
     public EMMethodInfo(Method method,boolean isMock){
         this.name=method.getName();
-        this.srcMethod=method;
+        this.sMethod=method;
         this.isMock=isMock;
     }
 
@@ -36,12 +36,12 @@ public class EMMethodInfo<R> extends IDObject {
         isMock = mock;
     }
 
-    public Method getSrcMethod() {
-        return srcMethod;
+    public Method getSMethod() {
+        return sMethod;
     }
 
-    public void setSrcMethod(Method srcMethod) {
-        this.srcMethod = srcMethod;
+    public void setSMethod(Method sMethod) {
+        this.sMethod = sMethod;
     }
 
     public Map<String, EMMethodInvoker<R>> getDynamicInvokers() {

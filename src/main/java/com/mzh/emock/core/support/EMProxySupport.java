@@ -23,50 +23,50 @@ public class EMProxySupport {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends S,S> EMProxyHolder<S> createProxy(Class<S> targetClz, T oldBean) {
-        EMProxyHolder<S> cached = findCreatedProxy(targetClz, oldBean);
+    public <T extends S,S> EMProxyHolder<S> createProxy(Class<S> tClass, T old) {
+        EMProxyHolder<S> cached = findCreatedProxy(tClass, old);
         if (cached != null) {
             return cached;
         }
-        S proxy =(targetClz.isInterface() ? createInterfaceProxy(targetClz, oldBean)
-                : createClassProxy(oldBean, targetClz));
-        context.getObjectGroup(oldBean).updateProxyHolder(new EMProxyHolder<>(targetClz,proxy));
-        return (EMProxyHolder<S>) context.getObjectGroup(oldBean).getProxyHolder(targetClz);
+        S proxy =(tClass.isInterface() ? createInterfaceProxy(tClass, old)
+                : createClassProxy(tClass,old));
+        context.getObjectGroup(old).updateProxyHolder(new EMProxyHolder<>(tClass,proxy));
+        return (EMProxyHolder<S>) context.getObjectGroup(old).getProxyHolder(tClass);
     }
 
-    private <T extends S,S> S createInterfaceProxy(Class<S> inf, T oldBean) {
-        if (oldBean instanceof Proxy) {
-            InvocationHandler oldHandler = Proxy.getInvocationHandler(oldBean);
+    private <T extends S,S> S createInterfaceProxy(Class<S> inf, T old) {
+        if (old instanceof Proxy) {
+            InvocationHandler oldHandler = Proxy.getInvocationHandler(old);
             return inf.cast(Proxy.newProxyInstance(loader, new Class[]{inf},
-                    createEnhance(oldHandler, handlerSupport.getHandlerEnhanceInterceptor(
-                            oldHandler, oldBean, inf))));
+                    createEnhance(oldHandler.getClass(),
+                            handlerSupport.getHandlerEnhanceInterceptor(inf, old, oldHandler))));
         }
         return inf.cast(Proxy.newProxyInstance(loader, new Class[]{inf},
-                handlerSupport.getInterfaceHandler(oldBean, inf)));
+                handlerSupport.getInterfaceHandler(inf,old)));
     }
 
 
-    private <T> T createClassProxy(T oldBean,Class<?> injectClz) {
-        return createEnhance(oldBean, handlerSupport.getEnhanceInterceptor(oldBean, injectClz));
+    private <T extends S,S> S createClassProxy(Class<S> tClass,T old) {
+        return createEnhance(tClass, handlerSupport.getEnhanceInterceptor(tClass,old));
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends S,S> EMProxyHolder<S> findCreatedProxy(Class<S> targetClz, T oldBean) {
-        EMObjectGroup<T> group = context.getObjectGroup(oldBean);
+    private <T extends S,S> EMProxyHolder<S> findCreatedProxy(Class<S> tClass, T old) {
+        EMObjectGroup<T> group = context.getObjectGroup(old);
         if (group == null) {
             return null;
         }
-        return (EMProxyHolder<S>) group.getProxyHolder(targetClz);
+        return (EMProxyHolder<S>) group.getProxyHolder(tClass);
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T createEnhance(T old, MethodInterceptor methodInterceptor) {
+    private <S> S createEnhance(Class<S> tClass, MethodInterceptor methodInterceptor) {
         Enhancer enhancer = new Enhancer();
-        enhancer.setSuperclass(old.getClass());
+        enhancer.setSuperclass(tClass);
         enhancer.setClassLoader(loader);
         enhancer.setUseCache(false);
         enhancer.setCallback(methodInterceptor);
-        Constructor<?>[] cons = old.getClass().getDeclaredConstructors();
+        Constructor<?>[] cons = tClass.getDeclaredConstructors();
         Constructor<?> usedCon = null;
         for (Constructor<?> con : cons) {
             if (usedCon == null) {
@@ -85,6 +85,6 @@ public class EMProxySupport {
             Object[] args = new Object[usedCon.getParameterCount()];
             proxy = enhancer.create(usedCon.getParameterTypes(), args);
         }
-        return (T) proxy;
+        return (S) proxy;
     }
 }

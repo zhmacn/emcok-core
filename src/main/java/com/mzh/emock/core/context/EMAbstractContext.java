@@ -43,7 +43,7 @@ public class EMAbstractContext extends IDObject implements EMContext {
      *                  该参数为空时，仅进行基本的筛选。
      * @throws EMDefinitionException sClass为空时
      */
-    protected <T,A> void loadDefinition(Class<?> sClass, Predicate<? super Method> predicate) throws EMDefinitionException {
+    protected void loadDefinition(Class<?> sClass, Predicate<? super Method> predicate) throws EMDefinitionException {
         if(sClass==null){
             logger.info("call load definition ,clz is null");
             throw new EMDefinitionException("call load definition ,sClz is null");
@@ -66,7 +66,7 @@ public class EMAbstractContext extends IDObject implements EMContext {
      *                definition中的返回类型为filter的子类时，满足条件
      * @param aFilter 期望创建wrapper的参数类型
      *                definition的参数类型为filter的超类时，满足条件
-     * @param args 创建wrappper时的传入参数
+     * @param args 创建wrapper时的传入参数
      * @param <A> 参数类型（实际参数的超类）
      * @param <T> 返回参数类型
      * @throws Exception 反射执行createWrapper出现错误时
@@ -78,7 +78,7 @@ public class EMAbstractContext extends IDObject implements EMContext {
             if(tFilter==null || EMClassUtil.isSubClass(key,tFilter)){
                 List<EMDefinition<?,?>> definitions=this.definitionMap.get(key);
                 for(EMDefinition<?,?> definition:definitions){
-                   if(EMClassUtil.isSuperClass(definition.getParamClz(),aFilter)){
+                   if(EMClassUtil.isSuperClass(definition.getAClass(),aFilter)){
                        EMDefinition<T,? super A> rem=(EMDefinition<T,? super A>)definition;
                        rem.createObjectWrapper(args);
                    }
@@ -92,6 +92,7 @@ public class EMAbstractContext extends IDObject implements EMContext {
      * 对于指定对象，根据已有definition，生成mock对象并保存至当前上下文中
      * @param old 需要生成mock对象的旧对象
      * @param <T> 旧对象的类型
+     * @param <S> 旧对象接口
      * @throws Exception 反射进行构建代理对象报错
      */
     @SuppressWarnings("unchecked")
@@ -117,7 +118,7 @@ public class EMAbstractContext extends IDObject implements EMContext {
         this.objectGroupMap.computeIfAbsent(old,o->new EMObjectGroup<>(old));
         EMObjectGroup<T> group=getObjectGroup(old);
         group.updateMockInfo(new EMObjectInfo<>(mock,definition));
-        group.updateProxyHolder(getProxySupport().createProxy(definition.getTargetClz(),old));
+        group.updateProxyHolder(getProxySupport().createProxy(definition.getTClass(),old));
     }
     private EMProxySupport getProxySupport(){
         if(this.proxySupport==null){
@@ -152,8 +153,8 @@ public class EMAbstractContext extends IDObject implements EMContext {
 
     @Override
     public <T, A> void addDefinition(EMDefinition<T, A> def) {
-        this.definitionMap.computeIfAbsent(def.getTargetClz(),k->new ArrayList<>());
-        this.definitionMap.get(def.getTargetClz()).add(def);
+        this.definitionMap.computeIfAbsent(def.getTClass(),k->new ArrayList<>());
+        this.definitionMap.get(def.getTClass()).add(def);
     }
 
     @Override

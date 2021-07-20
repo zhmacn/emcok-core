@@ -21,9 +21,12 @@ public @interface EMock {
      *  1.2 interface B extends A
      *  1.3 class C extends D implements B
      * 2. mock定义
+     * {@code
      *  2.1 EMDefinition<A> definitionA(Supplier<X> x)
      *  2.2 EMDefinition<A> definitionA(Supplier<X> x)
      *  2.3 EMDefinition<B> definitionB(Supplier<X> x)
+     * }
+     *
      * 3. 对C实例进行mock时，会同时生成3个mock对象。
      * 4. 使用C对象时：
      *  4.1 若C对象的声明类型为B，则默认使用2.3的mock对象进行处理
