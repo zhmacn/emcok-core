@@ -4,6 +4,7 @@ import com.mzh.emock.core.type.object.EMObjectInfo;
 import com.mzh.emock.core.type.proxy.EMProxyHolder;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * mock信息集合，用于保存mock的旧对象，生成的mock对象列表，该对象的代理对象
@@ -103,6 +104,9 @@ public class EMObjectGroup<T> extends IDObject{
         return getGroupByClass(tClass).getMockObjects();
     }
 
+    public List<? super T> getMockClass(){
+        return groupHolder.stream().map(SpecificClassGroup::getTClass).collect(Collectors.toList());
+    }
 
 
     private <S> void proxyHolderUpdate(EMProxyHolder<S> holder){
