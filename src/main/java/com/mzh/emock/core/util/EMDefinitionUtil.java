@@ -32,9 +32,9 @@ public class EMDefinitionUtil {
                 && (method.getModifiers() & Modifier.STATIC) != 0
                 && method.isAnnotationPresent(EMock.class)
                 && method.getParameterCount() == 1
-                && Supplier.class.isAssignableFrom(method.getParameterTypes()[0])
+                && EMClassUtil.isSubClass(method.getParameterTypes()[0],Supplier.class)
                 && method.getReturnType() == EMDefinition.class
-                && ParameterizedType.class.isAssignableFrom(method.getGenericReturnType().getClass())
+                && EMClassUtil.isSubClass(method.getGenericReturnType().getClass(),ParameterizedType.class)
                 && ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments() != null
                 && ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments().length == 1;
     }
