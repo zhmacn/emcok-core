@@ -104,7 +104,7 @@ public class EMObjectGroup<T> extends IDObject{
         return getGroupByClass(tClass).getMockObjects();
     }
 
-    public List<? super T> getMockClass(){
+    public List<Class<? super T>> getMockClass(){
         return groupHolder.stream().map(SpecificClassGroup::getTClass).collect(Collectors.toList());
     }
 
