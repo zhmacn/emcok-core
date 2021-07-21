@@ -60,7 +60,7 @@ public class EMClassUtil {
     public static List<Class<?>> getParameterizedTypeClass(Type type){
         if(type instanceof ParameterizedType){
             Type[] types=((ParameterizedType)type).getActualTypeArguments();
-            return Arrays.stream(types).map(Type::getClass).collect(Collectors.toList());
+            return Arrays.stream(types).map(t->(Class<?>)t).collect(Collectors.toList());
         }
         return null;
     }
@@ -72,7 +72,7 @@ public class EMClassUtil {
      * @return result
      */
     public static boolean isSubClass(Class<?> target,Class<?> src){
-        return target.isAssignableFrom(src);
+        return src.isAssignableFrom(target);
     }
 
     /**
@@ -82,6 +82,6 @@ public class EMClassUtil {
      * @return result
      */
     public static boolean isSuperClass(Class<?> target,Class<?> src){
-        return src.isAssignableFrom(target);
+        return target.isAssignableFrom(src);
     }
 }

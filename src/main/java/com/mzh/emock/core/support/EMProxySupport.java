@@ -2,6 +2,7 @@ package com.mzh.emock.core.support;
 
 import com.mzh.emock.core.context.EMContext;
 import com.mzh.emock.core.type.EMObjectGroup;
+import com.mzh.emock.core.type.handle.NonRecursionSearch;
 import com.mzh.emock.core.type.proxy.EMProxyHolder;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
@@ -10,7 +11,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 
-public class EMProxySupport {
+public class EMProxySupport implements NonRecursionSearch {
 
     private final EMContext context;
     private final ClassLoader loader;

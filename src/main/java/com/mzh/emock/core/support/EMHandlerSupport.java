@@ -1,6 +1,7 @@
 package com.mzh.emock.core.support;
 
 import com.mzh.emock.core.context.EMContext;
+import com.mzh.emock.core.type.handle.NonRecursionSearch;
 import com.mzh.emock.core.type.object.EMObjectInfo;
 import com.mzh.emock.core.type.object.method.EMMethodInfo;
 import com.mzh.emock.core.type.object.method.EMMethodInvoker;
@@ -14,7 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public class EMHandlerSupport {
+public class EMHandlerSupport implements NonRecursionSearch {
     private final EMContext context;
 
     @FunctionalInterface
@@ -22,7 +23,7 @@ public class EMHandlerSupport {
         T get() throws Throwable;
     }
 
-    private static class ESimpleInvoker<T,R> implements EMMethodInvoker.SimpleInvoker<R, Object[]> {
+    private static class ESimpleInvoker<T,R> implements EMMethodInvoker.SimpleInvoker<R, Object[]> ,NonRecursionSearch{
         private final T object;
         private final Method method;
 
@@ -38,7 +39,7 @@ public class EMHandlerSupport {
         }
     }
 
-    private abstract class EInvocationHandler<T extends S,S>{
+    private abstract class EInvocationHandler<T extends S,S> implements NonRecursionSearch{
         protected final T old;
         protected final Class<S> tClass;
         public EInvocationHandler(Class<S> tClass,T old){

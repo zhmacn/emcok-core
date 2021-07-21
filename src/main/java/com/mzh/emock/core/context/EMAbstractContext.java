@@ -5,6 +5,7 @@ import com.mzh.emock.core.log.Logger;
 import com.mzh.emock.core.support.EMProxySupport;
 import com.mzh.emock.core.type.EMObjectGroup;
 import com.mzh.emock.core.type.IDObject;
+import com.mzh.emock.core.type.handle.NonRecursionSearch;
 import com.mzh.emock.core.type.object.EMObjectInfo;
 import com.mzh.emock.core.type.object.EMObjectWrapper;
 import com.mzh.emock.core.type.object.definition.EMDefinition;
@@ -21,7 +22,7 @@ import java.util.function.Supplier;
  * 默认的mock上下文
  * @author zhma
  */
-public class EMAbstractContext extends IDObject implements EMContext {
+public class EMAbstractContext extends IDObject implements EMContext, NonRecursionSearch {
     private final Logger logger=Logger.get(EMAbstractContext.class);
     private final ClassLoader loader;
     private EMProxySupport proxySupport;

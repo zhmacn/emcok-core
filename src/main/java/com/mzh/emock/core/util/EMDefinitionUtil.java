@@ -1,6 +1,7 @@
 package com.mzh.emock.core.util;
 
 import com.mzh.emock.core.type.EMock;
+import com.mzh.emock.core.type.object.EMObjectWrapper;
 import com.mzh.emock.core.type.object.definition.EMDefinition;
 
 import java.lang.reflect.*;
@@ -33,10 +34,10 @@ public class EMDefinitionUtil {
                 && method.isAnnotationPresent(EMock.class)
                 && method.getParameterCount() == 1
                 && EMClassUtil.isSubClass(method.getParameterTypes()[0],Supplier.class)
-                && method.getReturnType() == EMDefinition.class
+                && method.getReturnType() == EMObjectWrapper.class
                 && EMClassUtil.isSubClass(method.getGenericReturnType().getClass(),ParameterizedType.class)
                 && ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments() != null
-                && ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments().length == 1;
+                && ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments().length == 2;
     }
 
 }

@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  * the definition source method should like this:
  * {@code
  * {@literal @}EMock(name="testMock")<br/>
- *  public EMDefinition<T> mockMethod(Supplier<A> supplier){<br/>
+ *  public EMObjectWrapper<T> mockMethod(Supplier<A> supplier){<br/>
  *      do something;<br/>
  *  }
  * }

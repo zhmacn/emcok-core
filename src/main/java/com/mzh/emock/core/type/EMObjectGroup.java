@@ -1,5 +1,6 @@
 package com.mzh.emock.core.type;
 
+import com.mzh.emock.core.type.handle.NonRecursionSearch;
 import com.mzh.emock.core.type.object.EMObjectInfo;
 import com.mzh.emock.core.type.proxy.EMProxyHolder;
 
@@ -20,9 +21,9 @@ import java.util.stream.Collectors;
  *
  * @param <T> mock信息的类型下界
  */
-public class EMObjectGroup<T> extends IDObject{
+public class EMObjectGroup<T> extends IDObject implements NonRecursionSearch {
     private final T oldObject;
-    private static class SpecificClassGroup<S>{
+    private static class SpecificClassGroup<S> implements NonRecursionSearch{
         private  Class<S> tClass;
         private  EMProxyHolder<S> proxyHolder;
         private  List<EMObjectInfo<S,?>> mockObjects=new ArrayList<>();
