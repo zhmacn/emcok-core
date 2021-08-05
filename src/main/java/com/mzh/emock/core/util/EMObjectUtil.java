@@ -22,16 +22,19 @@ public class EMObjectUtil {
     );
     private static final AtomicLong idSequence=new AtomicLong(0);
 
-    private static final int initSize=2000;
-    private static final Set<Object> hasRead=new HashSet<>(initSize);
+    private static final int initSize=2048;
+    //private static final Set<Object> hasRead=new HashSet<>(initSize);
+    private static final EMObjectMap.EMHashSet hashSet=new EMObjectMap.EMHashSet();
     private static Object currentTarget=null;
 
     private final Map<Object,List<EMFieldInfo>> holdingObject=new EMObjectMap<>();
     private boolean hasRead(Object o){
-        return hasRead.contains(o);
+        int hash=System.identityHashCode(o);
+        return hashSet.contains(hash);
     }
     private void addRead(Object o){
-        hasRead.add(o);
+        int hash=System.identityHashCode(o);
+        hashSet.add(hash);
     }
 
     private EMObjectUtil() { }
@@ -43,7 +46,7 @@ public class EMObjectUtil {
     public static Map<Object,List<EMFieldInfo>> match(Object src, Object target) {
         if(target!=currentTarget){
             System.out.println("em-matcher: handle object : "+target);
-            hasRead.clear();
+            hashSet.clear();
             currentTarget=target;
         }
         EMObjectUtil result = new EMObjectUtil();
