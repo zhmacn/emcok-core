@@ -23,44 +23,19 @@ public class EMObjectUtil {
     );
     private static final AtomicLong idSequence = new AtomicLong(0);
 
-    private class Tree{
-        private Node top;
-        public boolean exist(int i){
-            return true;
-        }
-        public void add(int i){
-            if(top==null){
-                top=new Node();
-                top.current=i;
-                return;
-            }
-            int curr=top.current;
-            while(true){
-                //if(i>)
-            }
-        }
+    private static final int initSize=2048;
+    //private static final Set<Object> hasRead=new HashSet<>(initSize);
+    private static final EMObjectMap.EMHashSet hashSet=new EMObjectMap.EMHashSet();
+    private static Object currentTarget=null;
 
-        private class Node{
-            int current;
-            Node prv;
-            Node next;
-        }
-    }
-
-    private static final int initSize = 2048;
-    private static final Set<Object> hasRead = new HashSet<>(initSize);
-    private static Object currentTarget = null;
-
-    private final Map<Object, List<EMFieldInfo>> holdingObject = new EMObjectMap<>();
-
-    private boolean hasRead(Object o) {
+    private final Map<Object,List<EMFieldInfo>> holdingObject=new EMObjectMap<>();
+    private boolean hasRead(Object o){
         int hash=System.identityHashCode(o);
-        return hasRead.contains(o);
+        return hashSet.contains(hash);
     }
-
-    private void addRead(Object o) {
+    private void addRead(Object o){
         int hash=System.identityHashCode(o);
-        hasRead.add(o);
+        hashSet.add(hash);
     }
 
     private EMObjectUtil() {
@@ -70,11 +45,11 @@ public class EMObjectUtil {
         return idSequence.getAndIncrement();
     }
 
-    public static Map<Object, List<EMFieldInfo>> match(Object src, Object target) {
-        if (target != currentTarget) {
-            System.out.println("em-matcher: handle object : " + target);
-            hasRead.clear();
-            currentTarget = target;
+    public static Map<Object,List<EMFieldInfo>> match(Object src, Object target) {
+        if(target!=currentTarget){
+            System.out.println("em-matcher: handle object : "+target);
+            hashSet.clear();
+            currentTarget=target;
         }
         EMObjectUtil result = new EMObjectUtil();
         result.getAllDeclaredFieldsHierarchy(src, result.holdingObject, target, new ArrayList<String>() {{
