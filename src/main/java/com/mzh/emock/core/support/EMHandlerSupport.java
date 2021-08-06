@@ -46,16 +46,16 @@ public class EMHandlerSupport implements NonRecursionSearch {
             this.old=old;
             this.tClass=tClass;
         }
-        private class MockResult{
-            private boolean mock;
+        protected class ExecResult{
+            private boolean exec;
             private Object result;
 
-            public boolean isMock() {
-                return mock;
+            public boolean isExec() {
+                return exec;
             }
 
-            public MockResult setMock(boolean mock) {
-                this.mock = mock;
+            public ExecResult setExec(boolean exec) {
+                this.exec = exec;
                 return this;
             }
 
@@ -63,34 +63,54 @@ public class EMHandlerSupport implements NonRecursionSearch {
                 return result;
             }
 
-            public MockResult setResult(Object result) {
+            public ExecResult setResult(Object result) {
                 this.result = result;
                 return this;
             }
         }
-
-        protected Object tryNoProxyMethod(S proxy, Method method, Object[] args){
+        //对于object代理的非代理方法处理，proxy对象为old（S）类型的代理对象
+        protected ExecResult tryObjectNoProxyMethod(S proxy, Method method, Object[] args){
+            ExecResult result=new ExecResult();
             String name=method.getName();
             switch (name){
                 case "hashCode":
-                    return context.getObjectGroup(old).getProxyHolder(tClass).getProxyHash();
+                    return result.setResult(context.getObjectGroup(old).getProxyHolder(tClass).getProxyHash())
+                            .setExec(true);
                 case "toString":
-                    return old.getClass().getName()+"@"+old.hashCode()+":mock by-->"+proxy.getClass()+"@"+proxy.hashCode();
+                    return result.setResult(old.getClass().getName()+"@"+old.hashCode()+":mock by-->"+proxy.getClass()+"@"+proxy.hashCode())
+                            .setExec(true);
                 case "equals":
-                    return proxy==args[0];
+                    return result.setResult(proxy==args[0]).setExec(true);
             }
-            return null;
+            return result.setExec(false);
         }
-        protected Object doMockElse(S proxy,Method method,Object[] args, DoElse<Object> doElse)throws Throwable{
-            MockResult result = doMock(proxy, method, args);
-            return result.isMock() ?result.getResult(): doElse.get();
+        protected ExecResult tryHandlerNoProxyMethod(InvocationHandler proxy,Method method,Object[] args){
+            ExecResult result=new ExecResult();
+            String name=method.getName();
+            switch (name){
+                case "hashCode":
+                    return result.setResult(-1*context.getObjectGroup(old).getProxyHolder(tClass).getProxyHash())
+                            .setExec(true);
+                case "toString":
+                    return result.setResult(old.getClass().getName()+"@"+old.hashCode()+"'s handler :mock by-->"+proxy.getClass()+"@"+proxy.hashCode())
+                            .setExec(true);
+                case "equals":
+                    return result.setResult(proxy==args[0])
+                            .setExec(true);
+            }
+            return result.setExec(false);
         }
 
-        protected MockResult doMock(S o, Method method, Object[] args) throws Exception {
-            MockResult result=new MockResult();
+        protected Object doMockElse(S proxy,Method method,Object[] args, DoElse<Object> doElse)throws Throwable{
+            ExecResult result = doMock(proxy, method, args);
+            return result.isExec() ?result.getResult(): doElse.get();
+        }
+
+        protected ExecResult doMock(S o, Method method, Object[] args) throws Exception {
+            ExecResult result=new ExecResult();
 
             if (context.getObjectGroup(old) == null || context.getObjectGroup(old).getMockInfo(tClass).size()==0) {
-                return result.setMock(false);
+                return result.setExec(false);
             }
             List<? extends EMObjectInfo<? super T, ?>> mockObjectInfoList=context.getObjectGroup(old).getMockInfo(tClass);
             for(EMObjectInfo<? super T,?> mockObjectInfo:mockObjectInfoList){
@@ -101,14 +121,14 @@ public class EMHandlerSupport implements NonRecursionSearch {
                         if (methodInfo.getEnabledDynamicInvoker() != null) {
                             EMMethodInvoker<?> dynamicInvoker = methodInfo.getDynamicInvokers().get(methodInfo.getEnabledDynamicInvoker());
                             Object mocked=dynamicInvoker.invoke(new ESimpleInvoker<>(old, method), new ESimpleInvoker<>(mockObjectInfo.getMockedObject(), method), args);
-                            return result.setResult(mocked).setMock(true);
+                            return result.setResult(mocked).setExec(true);
                         }
                         Object mocked=method.invoke(mockObjectInfo.getMockedObject(), args);
-                        return result.setResult(mocked).setMock(true);
+                        return result.setResult(mocked).setExec(true);
                     }
                 }
             }
-            return result.setMock(false);
+            return result.setExec(false);
         }
 
     }
@@ -121,8 +141,8 @@ public class EMHandlerSupport implements NonRecursionSearch {
         @Override
         @SuppressWarnings("unchecked")
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            Object n=tryNoProxyMethod((S)proxy,method,args);
-            return n==null?doMockElse((S)proxy,method,args,()->method.invoke(old,args)):n;
+            ExecResult execResult=tryObjectNoProxyMethod((S)proxy,method,args);
+            return execResult.isExec()?execResult.getResult():doMockElse((S)proxy,method,args,()->method.invoke(old,args));
         }
     }
 
@@ -134,8 +154,8 @@ public class EMHandlerSupport implements NonRecursionSearch {
         @Override
         @SuppressWarnings("unchecked")
         public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
-            Object n=tryNoProxyMethod((S)proxy,method,args);
-            return n==null?doMockElse((S)proxy,method,args,()->method.invoke(old,args)):n;
+            ExecResult execResult=tryObjectNoProxyMethod((S)proxy,method,args);
+            return execResult.isExec()?execResult.getResult():doMockElse((S)proxy,method,args,()->method.invoke(old,args));
         }
     }
 
@@ -149,17 +169,24 @@ public class EMHandlerSupport implements NonRecursionSearch {
 
         @Override
         @SuppressWarnings("unchecked")
+        //此处的代理对象Proxy为oldHandler的代理对象，非old的代理对象
+        //其中的args[0]
+        //其中的args[1]
+        //其中的args[2]--args[args.length-1]为真实参数
         public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
-            Object noProxyResult=tryNoProxyMethod(tClass.cast(proxy),method,args);
-            if(noProxyResult==null){
+            //判断是否需要执行代理对象的默认方法，执行：toString、hashCode、equals，认为是需要执行代理对象的该方法。
+            ExecResult execResult=tryHandlerNoProxyMethod(oldHandler.getClass().cast(proxy),method,args);
+            if(!execResult.isExec()){
                 if(method.getName().equals("invoke")){
-                    Method rMethod=(Method)args[0];
-                    Object[] rArgs= Arrays.copyOfRange(args,1,args.length-1);
-                    return doMockElse((S)proxy,rMethod,rArgs,()->oldHandler.invoke(old,rMethod,rArgs));
+                    S rProxy=(S)args[0];
+                    Method rMethod=(Method)args[1];
+                    Object[] rArgs= (Object[]) args[2];
+                    ExecResult objectExecResult=tryObjectNoProxyMethod(this.old,rMethod,null);
+                    return objectExecResult.isExec()?objectExecResult.getResult():doMockElse(rProxy,rMethod,rArgs,()->oldHandler.invoke(old,rMethod,rArgs));
                 }
                 return method.invoke(oldHandler,args);
             }
-            return noProxyResult;
+            return execResult.getResult();
         }
     }
 

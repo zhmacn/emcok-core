@@ -11,6 +11,7 @@ public class EMMethodInfo<R> extends IDObject {
     private String name;
     private boolean isMock;
     private Method sMethod;
+    private EMMethodSignature signature;
     private Map<String, EMMethodInvoker<R>> dynamicInvokers=new ConcurrentHashMap<>();
     private String enabledDynamicInvoker;
 
@@ -18,6 +19,7 @@ public class EMMethodInfo<R> extends IDObject {
         this.name=method.getName();
         this.sMethod=method;
         this.isMock=isMock;
+        this.signature=new EMMethodSignature(method);
     }
 
     public String getName() {
@@ -58,5 +60,13 @@ public class EMMethodInfo<R> extends IDObject {
 
     public void setEnabledDynamicInvoker(String enabledDynamicInvoker) {
         this.enabledDynamicInvoker = enabledDynamicInvoker;
+    }
+
+    public EMMethodSignature getSignature() {
+        return signature;
+    }
+
+    public void setSignature(EMMethodSignature signature) {
+        this.signature = signature;
     }
 }

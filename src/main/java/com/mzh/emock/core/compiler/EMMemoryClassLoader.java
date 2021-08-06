@@ -10,15 +10,15 @@ import java.util.Map;
  * @author zhma
  * 从指定的内存字节码中加载类
  */
-class MemoryClassLoader extends URLClassLoader {
-    private static final MemoryClassLoader memoryClassLoader=new MemoryClassLoader();
+public class EMMemoryClassLoader extends URLClassLoader {
+    private static final EMMemoryClassLoader memoryClassLoader=new EMMemoryClassLoader();
     private static final ThreadLocal<Map<String,byte[]>> localBytes=new ThreadLocal<>();
     public static Class<?> loadFromBytes(String name, Map<String, byte[]> classBytes) throws ClassNotFoundException, IOException {
         localBytes.set(classBytes);
         return memoryClassLoader.loadClass(name);
     }
-    private MemoryClassLoader() {
-        super(new URL[0],MemoryClassLoader.class.getClassLoader());
+    private EMMemoryClassLoader() {
+        super(new URL[0],EMMemoryClassLoader.class.getClassLoader());
     }
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {

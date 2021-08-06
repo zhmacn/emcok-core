@@ -1,4 +1,4 @@
-package com.mzh.emock.core.util.entity;
+package com.mzh.emock.core.type.object.method;
 
 
 import java.lang.reflect.Method;
@@ -18,7 +18,7 @@ public class EMMethodSignature {
         put("float","Float");
         put("double","Double");
         }};
-    private static final List<String> importIgnore=Arrays.asList("java.lang","com.mzh.emock.manager.code");
+    private static final List<String> importIgnore= Collections.singletonList("java.lang");
     private Method nativeMethod;
     private Map<String,String> fullTypeMap=new HashMap<>();
     private List<String> importList=new ArrayList<>();

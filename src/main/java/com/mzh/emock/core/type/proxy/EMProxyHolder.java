@@ -1,6 +1,6 @@
 package com.mzh.emock.core.type.proxy;
 
-import com.mzh.emock.core.util.entity.EMFieldInfo;
+import com.mzh.emock.core.type.object.field.EMFieldInfo;
 
 import java.util.ArrayList;
 import java.util.List;

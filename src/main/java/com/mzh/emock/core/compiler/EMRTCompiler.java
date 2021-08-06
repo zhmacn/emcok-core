@@ -30,9 +30,10 @@ public class EMRTCompiler {
      * @param source 字符串形式的源码
      * @return 编译结果
      */
-    public static EMCompilerResult compile(String fileName, String source) {
+    public static synchronized EMCompilerResult compile(String fileName, String source) {
         MemoryJavaFileManager manager = new MemoryJavaFileManager(stdManager);
         JavaFileObject javaFileObject = manager.makeStringSource(fileName, source);
+        diagnosticCollector.getDiagnostics().clear();
         CompilationTask task = compiler.getTask(null, manager, diagnosticCollector, null, null, Collections.singletonList(javaFileObject));
         Boolean result = task.call();
         if (result == null || !result) {

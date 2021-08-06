@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
  */
 public class EMObjectGroup<T> extends IDObject implements NonRecursionSearch {
     private final T oldObject;
+    private final String objectName;
     private static class SpecificClassGroup<S> implements NonRecursionSearch{
         private  Class<S> tClass;
         private  EMProxyHolder<S> proxyHolder;
@@ -57,9 +58,11 @@ public class EMObjectGroup<T> extends IDObject implements NonRecursionSearch {
     /**
      * 构造器
      * @param oldObject 需要mock的对象
+     * @param objectName 旧对象的描述名称
      */
-    public  EMObjectGroup(T oldObject){
+    public  EMObjectGroup(T oldObject,String objectName){
         this.oldObject=oldObject;
+        this.objectName=objectName;
     }
 
     /**
@@ -68,6 +71,10 @@ public class EMObjectGroup<T> extends IDObject implements NonRecursionSearch {
      */
     public T getOldObject() {
         return oldObject;
+    }
+
+    public String getObjectName(){
+        return objectName;
     }
 
     /**

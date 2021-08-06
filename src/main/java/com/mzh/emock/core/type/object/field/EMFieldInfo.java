@@ -1,4 +1,4 @@
-package com.mzh.emock.core.util.entity;
+package com.mzh.emock.core.type.object.field;
 
 import java.lang.reflect.Field;
 import java.util.List;

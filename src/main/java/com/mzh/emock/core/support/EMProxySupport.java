@@ -6,16 +6,22 @@ import com.mzh.emock.core.type.handle.NonRecursionSearch;
 import com.mzh.emock.core.type.proxy.EMProxyHolder;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
+import sun.misc.Unsafe;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Optional;
 
 public class EMProxySupport implements NonRecursionSearch {
 
     private final EMContext context;
     private final ClassLoader loader;
     private final EMHandlerSupport handlerSupport;
+    private Unsafe unsafe;
 
     public EMProxySupport(EMContext context,ClassLoader loader){
         this.context=context;
@@ -66,26 +72,33 @@ public class EMProxySupport implements NonRecursionSearch {
         enhancer.setSuperclass(tClass);
         enhancer.setClassLoader(loader);
         enhancer.setUseCache(false);
-        enhancer.setCallback(methodInterceptor);
-        Constructor<?>[] cons = tClass.getDeclaredConstructors();
-        Constructor<?> usedCon = null;
-        for (Constructor<?> con : cons) {
-            if (usedCon == null) {
-                usedCon = con;
-                continue;
-            }
-            if (con.getParameterCount() < usedCon.getParameterCount()) {
-                usedCon = con;
-            }
-        }
+        Optional<Constructor<?>> minCon=Arrays.stream(tClass.getDeclaredConstructors())
+                .min(Comparator.comparingInt(Constructor::getParameterCount));
         Object proxy;
-        assert usedCon != null;
-        if (usedCon.getParameterCount() == 0) {
+        if (minCon.isPresent() && minCon.get().getParameterCount() == 0) {
+            enhancer.setCallback(methodInterceptor);
             proxy = enhancer.create();
         } else {
-            Object[] args = new Object[usedCon.getParameterCount()];
-            proxy = enhancer.create(usedCon.getParameterTypes(), args);
+            enhancer.setCallbackType(MethodInterceptor.class);
+            Class<?> clz=enhancer.createClass();
+            Enhancer.registerStaticCallbacks(clz,new MethodInterceptor[]{methodInterceptor});
+            proxy=this.unsafeCreateObject(clz);
         }
         return (S) proxy;
     }
+
+    private Object unsafeCreateObject(Class<?> clazz){
+        try{
+            if(this.unsafe==null){
+                Field field=Unsafe.class.getDeclaredField("theUnsafe");
+                field.setAccessible(true);
+                this.unsafe=(Unsafe) field.get(null);
+            }
+            return this.unsafe.allocateInstance(clazz);
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
 }

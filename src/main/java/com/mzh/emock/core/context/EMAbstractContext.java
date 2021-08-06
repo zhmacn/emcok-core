@@ -62,27 +62,18 @@ public class EMAbstractContext extends IDObject implements EMContext, NonRecursi
     /**
      * 对于指定的mock定义，创造mock对象wrapper
      * 可以根据传入参数来构建wrapper
+     * 要求传入的predicate对Definition进行筛选后的结果必须满足createWrapper的参数为supplier的get返回的参数
      *
-     * @param tFilter 期望创建wrapper的返回类型
-     *                definition中的返回类型为filter的子类时，满足条件
-     * @param aFilter 期望创建wrapper的参数类型
-     *                definition的参数类型为filter的超类时，满足条件
-     * @param args 创建wrapper时的传入参数
-     * @param <A> 参数类型（实际参数的超类）
-     * @param <T> 返回参数类型
+     * @param <A> type Param
+     * @param supplier supplier param
+     * @param predicate 比较器
      * @throws Exception 反射执行createWrapper出现错误时
      */
-    @SuppressWarnings("unchecked")
-    protected <T,A> void createWrapper(Class<T> tFilter,Class<A> aFilter,Supplier<? extends A> args) throws Exception {
-        if(args==null || aFilter==null){ return ;}
-        for(Class<?> key:this.definitionMap.keySet()){
-            if(tFilter==null || EMClassUtil.isSubClass(key,tFilter)){
-                List<EMDefinition<?,?>> definitions=this.definitionMap.get(key);
-                for(EMDefinition<?,?> definition:definitions){
-                   if(EMClassUtil.isSuperClass(definition.getAClass(),aFilter)){
-                       EMDefinition<T,? super A> rem=(EMDefinition<T,? super A>)definition;
-                       rem.createObjectWrapper(args);
-                   }
+    protected <A> void createWrapper(Predicate<EMDefinition<?,?>> predicate, Supplier<? extends A> supplier) throws Exception {
+        for(List<EMDefinition<?,?>> list:this.definitionMap.values()){
+            for(EMDefinition<?,?> def:list){
+                if(predicate.test(def)){
+                    ((EMDefinition<?,? super A>)def).createObjectWrapper(supplier);
                 }
             }
         }
@@ -92,12 +83,13 @@ public class EMAbstractContext extends IDObject implements EMContext, NonRecursi
     /**
      * 对于指定对象，根据已有definition，生成mock对象并保存至当前上下文中
      * @param old 需要生成mock对象的旧对象
+     * @param name 旧对象的描述符（名称）
      * @param <T> 旧对象的类型
      * @param <S> 旧对象接口
      * @throws Exception 反射进行构建代理对象报错
      */
     @SuppressWarnings("unchecked")
-    protected <T extends S,S> void updateMockObjectInfo(T old) throws Exception {
+    protected <T extends S,S> void updateMockObjectInfo(T old,String name) throws Exception {
         Set<Class<?>> keys=this.definitionMap.keySet();
         for(Class<?> key:keys){
             if(EMClassUtil.isSubClass(old.getClass(),key)){
@@ -109,14 +101,14 @@ public class EMAbstractContext extends IDObject implements EMContext, NonRecursi
                                 +old.hashCode()+",definition id :"+definition.getId());
                         continue;
                     }
-                    update(old,wrapper.wrap(old),(EMDefinition<S, ?>) definition);
+                    update(old,name,wrapper.wrap(old),(EMDefinition<S, ?>) definition);
                 }
             }
         }
     }
 
-    private <T extends S,S> void update(T old,S mock,EMDefinition<S,?> definition){
-        this.objectGroupMap.computeIfAbsent(old,o->new EMObjectGroup<>(old));
+    private <T extends S,S> void update(T old,String name,S mock,EMDefinition<S,?> definition){
+        this.objectGroupMap.computeIfAbsent(old,o->new EMObjectGroup<>(old,name));
         EMObjectGroup<T> group=getObjectGroup(old);
         group.updateMockInfo(new EMObjectInfo<>(mock,definition));
         group.updateProxyHolder(getProxySupport().createProxy(definition.getTClass(),old));

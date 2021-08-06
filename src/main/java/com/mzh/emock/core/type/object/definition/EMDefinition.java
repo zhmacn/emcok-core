@@ -9,11 +9,9 @@ import com.mzh.emock.core.util.EMClassUtil;
 import com.mzh.emock.core.util.EMDefinitionUtil;
 import com.mzh.emock.core.util.EMStringUtil;
 
-import javax.naming.ldap.SortResponseControl;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -152,4 +150,8 @@ public class EMDefinition<S, A> extends IDObject {
     }
 
     public ClassLoader getLoader(){return loader;}
+
+    public void setOrder(int order) {
+        this.order = order;
+    }
 }
