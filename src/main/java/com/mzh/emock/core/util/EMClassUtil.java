@@ -1,5 +1,7 @@
 package com.mzh.emock.core.util;
 
+import net.sf.cglib.beans.BeanCopier;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;

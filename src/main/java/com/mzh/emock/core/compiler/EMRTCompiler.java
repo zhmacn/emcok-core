@@ -15,14 +15,6 @@ import javax.tools.JavaCompiler.CompilationTask;
  */
 public class EMRTCompiler {
 
-    private static final JavaCompiler compiler;
-    private static final StandardJavaFileManager stdManager;
-    private static final DiagnosticCollector<JavaFileObject> diagnosticCollector;
-    static{
-        compiler = ToolProvider.getSystemJavaCompiler();
-        diagnosticCollector=new DiagnosticCollector<>();
-        stdManager = compiler.getStandardFileManager(diagnosticCollector, Locale.getDefault(), StandardCharsets.UTF_8);
-    }
 
     /**
      * 提供实时编译支持
@@ -31,9 +23,11 @@ public class EMRTCompiler {
      * @return 编译结果
      */
     public static synchronized EMCompilerResult compile(String fileName, String source) {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        DiagnosticCollector<JavaFileObject> diagnosticCollector=new DiagnosticCollector<>();
+        StandardJavaFileManager stdManager = compiler.getStandardFileManager(diagnosticCollector, Locale.getDefault(), StandardCharsets.UTF_8);
         MemoryJavaFileManager manager = new MemoryJavaFileManager(stdManager);
         JavaFileObject javaFileObject = manager.makeStringSource(fileName, source);
-        diagnosticCollector.getDiagnostics().clear();
         CompilationTask task = compiler.getTask(null, manager, diagnosticCollector, null, null, Collections.singletonList(javaFileObject));
         Boolean result = task.call();
         if (result == null || !result) {
