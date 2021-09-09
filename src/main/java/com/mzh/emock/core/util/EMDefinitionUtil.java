@@ -37,7 +37,7 @@ public class EMDefinitionUtil {
                 && method.getReturnType() == EMObjectWrapper.class
                 && EMClassUtil.isSubClass(method.getGenericReturnType().getClass(),ParameterizedType.class)
                 && ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments() != null
-                && ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments().length == 2;
+                && ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments().length == 1;
     }
 
 }

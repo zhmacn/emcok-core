@@ -95,7 +95,7 @@ public class EMAbstractContext extends IDObject implements EMContext, NonRecursi
             if(EMClassUtil.isSubClass(old.getClass(),key)){
                 List<EMDefinition<?,?>> definitions=this.definitionMap.get(key);
                 for(EMDefinition<?,?> definition:definitions){
-                    EMObjectWrapper<S,T> wrapper=(EMObjectWrapper<S,T>) definition.getWrapper();
+                    EMObjectWrapper<S> wrapper=(EMObjectWrapper<S>) definition.getWrapper();
                     if(wrapper==null){
                         logger.info("update mock object warning,no wrapper,object class : "
                                 +old.hashCode()+",definition id :"+definition.getId());

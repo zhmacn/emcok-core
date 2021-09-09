@@ -47,16 +47,16 @@ public class EMDefinition<S, A> extends IDObject {
     private boolean methodEnableMock;
     private String[] reverseEnabledMethods;
 
-    private EMObjectWrapper<S,? extends S> wrapper;
+    private EMObjectWrapper<S> wrapper;
 
     private final Map<Class<?>, Object> annotations = new ConcurrentHashMap<>();
 
 
-    private final EMMethodInvoker.SimpleInvoker<EMObjectWrapper<S,? extends S>, Supplier<? extends A>> methodInvoker = new EMMethodInvoker.SimpleInvoker<EMObjectWrapper<S,? extends S>, Supplier<? extends A>>() {
+    private final EMMethodInvoker.SimpleInvoker<EMObjectWrapper<S>, Supplier<? extends A>> methodInvoker = new EMMethodInvoker.SimpleInvoker<EMObjectWrapper<S>, Supplier<? extends A>>() {
         @Override
         @SuppressWarnings("unchecked")
-        public EMObjectWrapper<S,? extends S> invoke(Supplier<? extends A> args) throws InvocationTargetException, IllegalAccessException {
-            return (EMObjectWrapper<S,? extends S>) sMethod.invoke(null, args);
+        public EMObjectWrapper<S> invoke(Supplier<? extends A> args) throws InvocationTargetException, IllegalAccessException {
+            return (EMObjectWrapper<S>) sMethod.invoke(null, args);
         }
     };
 
@@ -99,7 +99,7 @@ public class EMDefinition<S, A> extends IDObject {
     }
 
 
-    public EMMethodInvoker.SimpleInvoker<EMObjectWrapper<S,? extends S>, Supplier<? extends A>> getMethodInvoker() {
+    public EMMethodInvoker.SimpleInvoker<EMObjectWrapper<S>, Supplier<? extends A>> getMethodInvoker() {
         return methodInvoker;
     }
 
@@ -145,7 +145,7 @@ public class EMDefinition<S, A> extends IDObject {
         return aClass;
     }
 
-    public EMObjectWrapper<S,? extends S> getWrapper() {
+    public EMObjectWrapper<S> getWrapper() {
         return wrapper;
     }
 
