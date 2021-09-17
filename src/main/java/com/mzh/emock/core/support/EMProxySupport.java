@@ -1,6 +1,7 @@
 package com.mzh.emock.core.support;
 
 import com.mzh.emock.core.context.EMContext;
+import com.mzh.emock.core.log.Logger;
 import com.mzh.emock.core.type.EMObjectGroup;
 import com.mzh.emock.core.type.handle.NonRecursionSearch;
 import com.mzh.emock.core.type.proxy.EMProxyHolder;
@@ -8,10 +9,7 @@ import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import sun.misc.Unsafe;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
+import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Optional;
@@ -21,6 +19,7 @@ public class EMProxySupport implements NonRecursionSearch {
     private final EMContext context;
     private final ClassLoader loader;
     private final EMHandlerSupport handlerSupport;
+    private final Logger logger=Logger.get(EMProxySupport.class);
     private Unsafe unsafe;
 
     public EMProxySupport(EMContext context,ClassLoader loader){
@@ -44,9 +43,14 @@ public class EMProxySupport implements NonRecursionSearch {
     private <T extends S,S> S createInterfaceProxy(Class<S> inf, T old) {
         if (old instanceof Proxy) {
             InvocationHandler oldHandler = Proxy.getInvocationHandler(old);
-            return inf.cast(Proxy.newProxyInstance(loader, new Class[]{inf},
-                    createEnhance(oldHandler.getClass(),
-                            handlerSupport.getHandlerEnhanceInterceptor(inf, old, oldHandler))));
+            if((oldHandler.getClass().getModifiers() & Modifier.FINAL)==0){
+                return inf.cast(Proxy.newProxyInstance(loader, new Class[]{inf},
+                        createEnhance(oldHandler.getClass(),
+                                handlerSupport.getHandlerEnhanceInterceptor(inf, old, oldHandler))));
+            }
+            logger.warn("target class"+inf.getName()+
+                    " is a jdk proxy,but it's handler a instance of final class,"+
+                    " will not create proxy for handler!!!");
         }
         return inf.cast(Proxy.newProxyInstance(loader, new Class[]{inf},
                 handlerSupport.getInterfaceHandler(inf,old)));
